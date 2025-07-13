@@ -9,9 +9,10 @@ This repository contains the source code for StitchGrab, built with Medusa (head
 1. [Cloning the Repository](#cloning-the-repository)
 2. [Setting Up the Development Environment](#setting-up-the-development-environment)
 3. [Developing Locally](#developing-locally)
-4. [Pushing Changes to GitHub](#pushing-changes-to-github)
-5. [Important Notes](#important-notes)
-6. [Additional Resources](#additional-resources)
+4. [Database Cleanup and Seeding](#database-cleanup-and-seeding)
+5. [Pushing Changes to GitHub](#pushing-changes-to-github)
+6. [Important Notes](#important-notes)
+7. [Additional Resources](#additional-resources)
 
 ---
 
@@ -115,6 +116,80 @@ To get started with the project, clone the GitHub repository to your local machi
 - Make changes to the frontend files in the `stg-storefront/` directory.
 - Test your changes locally by refreshing the browser.
 - Use the Medusa admin panel to manage products, orders, and customers.
+
+---
+
+## Database Cleanup and Seeding
+
+### Cleaning Up the Database
+When you need to start fresh or reset your development database, you can clean up existing data:
+
+1. **Navigate to the backend directory**:
+   ```bash
+   cd stg
+   ```
+
+2. **Reset the database (this is only if you are having issues with your db)** (⚠️ **Warning**: This will delete all data):
+   ```bash
+   npx medusa db reset
+   ```
+   This command will:
+   - Drop all tables
+   - Run all migrations
+   - Create fresh database structure
+
+3. **Alternative: Drop and recreate database**:
+   ```bash
+   # Drop the database (replace 'your_db_name' with your actual database name)
+   dropdb your_db_name
+   
+   # Create a new database
+   createdb your_db_name
+   
+   # Run migrations
+   npx medusa migrations run
+   ```
+
+### Seeding Dummy Products
+After cleaning up the database, you can seed it with dummy products for development:
+
+1. **Use Medusa's built-in seed command**:
+   ```bash
+   npx medusa seed
+   ```
+   This will create:
+   - Sample products with variants
+   - Product categories
+   - Collections
+   - Sample customers
+   - Sample orders
+
+2. **Custom seeding** (if you have custom seed files):
+   ```bash
+   # Run Stitchgrab dummy products seed files
+   npm run seed:dummy
+   
+   # Clean up custom seeding
+   npm run cleanup:dummy
+   ```
+
+3. **Manual product creation via Admin Panel**:
+   - Start the Medusa server: `npm run dev`
+   - Access the admin panel at `http://localhost:9000/app`
+   - Navigate to Products → Create Product
+   - Add products manually with:
+     - Product title and description
+     - Product images
+     - Variants (sizes, colors, etc.)
+     - Pricing
+     - Inventory
+
+### Best Practices for Development Data
+- **Use realistic data**: Create products that match your actual business needs
+- **Include various product types**: Different categories, price ranges, and variants
+- **Test edge cases**: Products with no inventory, out-of-stock items, etc.
+- **Regular cleanup**: Reset your database periodically to avoid data conflicts
+- **Backup important data**: Export any custom data before cleanup
 
 ---
 
