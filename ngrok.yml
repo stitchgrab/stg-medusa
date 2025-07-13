@@ -1,0 +1,15 @@
+version: "2"
+authtoken: 2sEkuaVqb3etOaTRBIWxj9aXILx_8a8y9bPCF5eaYsERGqagM
+
+tunnels:
+  backend:
+    proto: http
+    addr: 9000
+    domain: flamingo-tough-blindly.ngrok-free.app
+    inspect: true
+    
+  frontend:
+    proto: http
+    addr: 8000
+    domain: storefront-flamingo-tough-blindly.ngrok-free.app
+    inspect: true

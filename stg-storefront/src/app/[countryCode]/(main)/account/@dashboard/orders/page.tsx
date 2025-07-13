@@ -7,7 +7,7 @@ import Divider from "@modules/common/components/divider"
 import TransferRequestForm from "@modules/account/components/transfer-request-form"
 
 export const metadata: Metadata = {
-  title: "Orders",
+  title: "Orders | StitchGrab",
   description: "Overview of your previous orders.",
 }
 

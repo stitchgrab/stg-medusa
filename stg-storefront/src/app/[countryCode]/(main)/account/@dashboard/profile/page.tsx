@@ -11,8 +11,8 @@ import { listRegions } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
 
 export const metadata: Metadata = {
-  title: "Profile",
-  description: "View and edit your Medusa Store profile.",
+  title: "Profile | StitchGrab",
+  description: "View and edit your StitchGrab profile.",
 }
 
 export default async function Profile() {
@@ -51,4 +51,4 @@ export default async function Profile() {
 const Divider = () => {
   return <div className="w-full h-px bg-gray-200" />
 }
-;``
+  ; ``

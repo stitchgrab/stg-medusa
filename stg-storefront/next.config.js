@@ -7,36 +7,31 @@ checkEnvVariables()
  */
 const nextConfig = {
   reactStrictMode: true,
-  // WSL2 file watching optimizations   
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-        ignored: ['**/node_modules', '**/.git'],
-      }
-    }
-    return config
-  },
-  watchOptions: {
-    pollIntervalMs: 1000,
-  },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
+  allowedDevOrigins: ['flamingo-tough-blindly.ngrok-free.app', 'storefront-flamingo-tough-blindly.ngrok-free.app'],
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Image optimization
   images: {
     remotePatterns: [
       {
         protocol: "http",
         hostname: "localhost",
+      },
+      {
+        protocol: "https",
+        hostname: "loremflickr.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "flamingo-tough-blindly.ngrok-free.app",
       },
       {
         protocol: "https",

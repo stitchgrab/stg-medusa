@@ -15,6 +15,8 @@
   "scripts": {
     "build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
+    "seed:dummy": "medusa exec ./src/scripts/dummy-products.ts",
+    "cleanup:dummy": "medusa exec ./src/scripts/cleanup-dummy-products.ts",
     "start": "medusa start",
     "dev": "medusa develop",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
@@ -34,6 +36,7 @@
     "pg": "^8.13.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@medusajs/test-utils": "2.8.6",
     "@mikro-orm/cli": "6.4.3",
     "@swc/core": "1.5.7",

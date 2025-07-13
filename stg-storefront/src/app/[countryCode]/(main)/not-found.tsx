@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import InteractiveLink from "@modules/common/components/interactive-link"
 
 export const metadata: Metadata = {
-  title: "404",
+  title: "404 | StitchGrab",
   description: "Something went wrong",
 }
 

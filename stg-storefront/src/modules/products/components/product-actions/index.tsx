@@ -4,10 +4,10 @@ import { addToCart } from "@lib/data/cart"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
-import Divider from "@modules/common/components/divider"
+import { Bookmarks } from "@medusajs/icons"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { isEqual } from "lodash"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import MobileActions from "./mobile-actions"
@@ -34,14 +34,35 @@ export default function ProductActions({
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = useParams().countryCode as string
+  const searchParams = useSearchParams()
 
-  // If there is only 1 variant, preselect the options
+  // Initialize options from URL params or default to single variant
   useEffect(() => {
-    if (product.variants?.length === 1) {
+    let initialOptions: Record<string, string | undefined> = {}
+    
+    // Check if there are URL params for options
+    const hasUrlOptions = Array.from(searchParams.keys()).some(key => key.startsWith('opt_'))
+    
+    if (hasUrlOptions) {
+      // Read options from URL params
+      searchParams.forEach((value, key) => {
+        if (key.startsWith('opt_')) {
+          const optionTitle = key.replace('opt_', '')
+          // Find the option ID by title
+          const option = product.options?.find(opt => opt.title === optionTitle)
+          if (option) {
+            initialOptions[option.id] = value
+          }
+        }
+      })
+    } else if (product.variants?.length === 1) {
+      // If there is only 1 variant, preselect the options
       const variantOptions = optionsAsKeymap(product.variants[0].options)
-      setOptions(variantOptions ?? {})
+      initialOptions = variantOptions ?? {}
     }
-  }, [product.variants])
+    
+    setOptions(initialOptions)
+  }, [product.variants, product.options, searchParams])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -116,6 +137,8 @@ export default function ProductActions({
   return (
     <>
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
+        <ProductPrice product={product} variant={selectedVariant} deliveryFee={15} />
+
         <div>
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
@@ -133,33 +156,35 @@ export default function ProductActions({
                   </div>
                 )
               })}
-              <Divider />
             </div>
           )}
         </div>
 
-        <ProductPrice product={product} variant={selectedVariant} />
-
-        <Button
-          onClick={handleAddToCart}
-          disabled={
-            !inStock ||
-            !selectedVariant ||
-            !!disabled ||
-            isAdding ||
-            !isValidVariant
-          }
-          variant="primary"
-          className="w-full h-10"
-          isLoading={isAdding}
-          data-testid="add-product-button"
-        >
-          {!selectedVariant && !options
-            ? "Select variant"
-            : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
-        </Button>
+        <div className="flex gap-2 w-full">
+          <Button
+            onClick={handleAddToCart}
+            disabled={
+              !inStock ||
+              !selectedVariant ||
+              !!disabled ||
+              isAdding ||
+              !isValidVariant
+            }
+            variant="primary"
+            className="h-10 mt-3 basis-3/4"
+            isLoading={isAdding}
+            data-testid="add-product-button"
+          >
+            {!selectedVariant && !options
+              ? "Select variant"
+              : !inStock || !isValidVariant
+                ? "Out of Stock"
+                : "Add to Bag"}
+          </Button>
+          <Button variant="secondary" className="h-10 mt-3 basis-1/4 flex-shrink-0">
+            <Bookmarks />
+          </Button>
+        </div>
         <MobileActions
           product={product}
           variant={selectedVariant}

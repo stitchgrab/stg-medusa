@@ -1,51 +1,34 @@
+"use client"
+
 import { Button } from "@medusajs/ui"
+import { useRouter } from "next/navigation"
 
 const categories = [
   {
     name: "Men",
     description: "Shop All Men",
     image: "/images/categories/men.jpg",
-    href: "/store?categories=men",
+    href: "/categories/men",
     color: "from-blue-500 to-blue-600"
   },
   {
     name: "Women",
     description: "Shop All Women",
     image: "/images/categories/women.jpg",
-    href: "/store?categories=women",
+    href: "/categories/women",
     color: "from-pink-500 to-pink-600"
   },
   {
-    name: "Vintage",
-    description: "Vintage Collection",
-    image: "/images/categories/vintage.jpg",
-    href: "/store?categories=vintage",
-    color: "from-amber-500 to-amber-600"
-  },
-  {
-    name: "Streetwear",
-    description: "Streetwear Styles",
-    image: "/images/categories/streetwear.jpg",
-    href: "/store?categories=streetwear",
-    color: "from-gray-500 to-gray-600"
-  },
-  {
-    name: "Accessories",
-    description: "Fashion Accessories",
-    image: "/images/categories/accessories.jpg",
-    href: "/store?categories=accessories",
+    name: "Brands",
+    description: "Shop by Brand",
+    image: "/images/categories/brands.jpg",
+    href: "/categories/brands",
     color: "from-purple-500 to-purple-600"
-  },
-  {
-    name: "Denim",
-    description: "Denim Collection",
-    image: "/images/categories/denim.jpg",
-    href: "/store?categories=denim",
-    color: "from-indigo-500 to-indigo-600"
   }
 ]
 
 const Categories = () => {
+  const router = useRouter()
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-6">
@@ -85,6 +68,7 @@ const Categories = () => {
                   variant="secondary"
                   size="small"
                   className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white text-stitchgrab-primary hover:bg-stitchgrab-accent hover:text-white"
+                  onClick={() => router.push(category.href)}
                 >
                   Shop Now
                 </Button>

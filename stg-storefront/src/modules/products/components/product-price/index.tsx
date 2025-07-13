@@ -6,9 +6,11 @@ import { HttpTypes } from "@medusajs/types"
 export default function ProductPrice({
   product,
   variant,
+  deliveryFee,
 }: {
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
+  deliveryFee?: number
 }) {
   const { cheapestPrice, variantPrice } = getProductPrice({
     product,
@@ -33,7 +35,7 @@ export default function ProductPrice({
           data-testid="product-price"
           data-value={selectedPrice.calculated_price_number}
         >
-          {selectedPrice.calculated_price}
+          {selectedPrice.calculated_price} <span className="text-sm text-ui-fg-subtle">Delivery Fee (${deliveryFee})</span>
         </span>
       </span>
       {selectedPrice.price_type === "sale" && (

@@ -9,7 +9,7 @@ import { StripeProvider } from "providers/stripe"
 
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Checkout | StitchGrab",
 }
 
 export default async function Checkout() {

@@ -1,8 +1,10 @@
 import { Text, clx } from "@medusajs/ui"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import React from "react"
+import { ChevronDownMini } from "@medusajs/icons"
+import ChevronDown from "@modules/common/icons/chevron-down"
 
-type AccordionItemProps = AccordionPrimitive.AccordionItemProps & {
+interface AccordionItemProps extends AccordionPrimitive.AccordionItemProps {
   title: string
   subtitle?: string
   description?: string
@@ -15,19 +17,37 @@ type AccordionItemProps = AccordionPrimitive.AccordionItemProps & {
   active?: boolean
   triggerable?: boolean
   children: React.ReactNode
+  borderless?: boolean
+  chevronTrigger?: boolean
 }
 
-type AccordionProps =
-  | (AccordionPrimitive.AccordionSingleProps &
-      React.RefAttributes<HTMLDivElement>)
-  | (AccordionPrimitive.AccordionMultipleProps &
-      React.RefAttributes<HTMLDivElement>)
+interface AccordionProps extends React.PropsWithChildren<{}> {
+  borderless?: boolean
+  chevronTrigger?: boolean
+  type?: "single" | "multiple"
+  defaultValue?: string[]
+  value?: string[]
+  onValueChange?: (value: string[]) => void
+}
 
-const Accordion: React.FC<AccordionProps> & {
-  Item: React.FC<AccordionItemProps>
-} = ({ children, ...props }) => {
+const Accordion: React.FC<AccordionProps> & { Item: React.FC<AccordionItemProps> } = ({ children, borderless, chevronTrigger, type, defaultValue, value, onValueChange }) => {
+  // Only pass defined props to AccordionPrimitive.Root
+  const rootProps: any = {}
+  if (type) rootProps.type = type
+  if (defaultValue) rootProps.defaultValue = defaultValue
+  if (value) rootProps.value = value
+  if (onValueChange) rootProps.onValueChange = onValueChange
+
   return (
-    <AccordionPrimitive.Root {...props}>{children}</AccordionPrimitive.Root>
+    <AccordionPrimitive.Root {...rootProps}>
+      {/* Pass borderless and chevronTrigger prop to children */}
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as any, { borderless, chevronTrigger })
+        }
+        return child
+      })}
+    </AccordionPrimitive.Root>
   )
 }
 
@@ -41,13 +61,17 @@ const Item: React.FC<AccordionItemProps> = ({
   customTrigger = undefined,
   forceMountContent = undefined,
   triggerable,
+  borderless = false,
+  chevronTrigger = false,
   ...props
 }) => {
   return (
     <AccordionPrimitive.Item
       {...props}
       className={clx(
-        "border-grey-20 group border-t last:mb-0 last:border-b",
+        borderless
+          ? ""
+          : "border-grey-20 group border-t last:mb-0 last:border-b",
         "py-3",
         className
       )}
@@ -56,10 +80,14 @@ const Item: React.FC<AccordionItemProps> = ({
         <div className="flex flex-col">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-4">
-              <Text className="text-ui-fg-subtle text-sm">{title}</Text>
+              <Text className="ext-sm text-ui-fg-base font-medium">{title}</Text>
             </div>
             <AccordionPrimitive.Trigger>
-              {customTrigger || <MorphingTrigger />}
+              {customTrigger
+                ? customTrigger
+                : chevronTrigger
+                  ? <ChevronDownTrigger />
+                  : <MorphingTrigger />}
             </AccordionPrimitive.Trigger>
           </div>
           {subtitle && (
@@ -85,6 +113,13 @@ const Item: React.FC<AccordionItemProps> = ({
 }
 
 Accordion.Item = Item
+
+// ChevronDownTrigger: rotates chevron-down icon
+const ChevronDownTrigger = () => (
+  <span className="transition-transform duration-300 inline-block radix-state-open:rotate-180">
+    <ChevronDownMini />
+  </span>
+)
 
 const MorphingTrigger = () => {
   return (

@@ -38,8 +38,27 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
       `/store/product-categories`,
       {
         query: {
-          fields: "*category_children, *products",
+          fields: "*category_children, *products, *parent_category, *parent_category.category_children",
           handle,
+        },
+        next,
+        cache: "force-cache",
+      }
+    )
+    .then(({ product_categories }) => product_categories[0])
+}
+export const getCategoryById = async (categoryId: string) => {
+  const next = {
+    ...(await getCacheOptions("categories")),
+  }
+
+  return sdk.client
+    .fetch<HttpTypes.StoreProductCategoryListResponse>(
+      `/store/product-categories`,
+      {
+        query: {
+          fields: "*category_children, *products, *parent_category, *parent_category.category_children",
+          id: categoryId,
         },
         next,
         cache: "force-cache",
