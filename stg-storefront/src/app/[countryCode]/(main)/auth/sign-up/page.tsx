@@ -5,6 +5,7 @@ import React from "react";
 import GoogleIcon from "../../../../../components/icons/GoogleIcon";
 import AppleIcon from "../../../../../components/icons/AppleIcon";
 import { useAuthForm } from "../../../../../hooks/useAuthForm";
+import { useAuthSignIn } from "../../../../../hooks/useAuthSignIn";
 import "../../../../../styles/auth.css";
 
 export default function SignUpPage() {
@@ -17,20 +18,28 @@ export default function SignUpPage() {
     handleSubmit
   } = useAuthForm();
 
+  const { handleGoogleSignIn, handleAppleSignIn } = useAuthSignIn();
+
   return (
     <div className="container-fluid d-flex justify-content-center align-items-center auth-container px-3">
       <div className="card p-3 p-md-4 border-0 auth-card">
         <h2 className="mb-2 text-center auth-heading">
-          Welcome to <span className="auth-heading-brand">STITCHGRAB</span>?
+          Welcome to <span className="auth-heading-brand">STITCHGRAB</span>
         </h2>
         <span className="mb-3 text-center d-block auth-subtitle">
           Create your account to get started
         </span>
-        <button className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button">
+        <button 
+          onClick={handleGoogleSignIn}
+          className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button"
+        >
           <span className="social-icon-container"><GoogleIcon height={29} width={24} /></span>
           Continue with Google
         </button>
-        <button className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button">
+        <button 
+          onClick={handleAppleSignIn}
+          className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button"
+        >
           <span className="social-icon-container"><AppleIcon height={29} width={24} /></span>
           Continue with Apple
         </button>
@@ -40,7 +49,7 @@ export default function SignUpPage() {
           <hr className="flex-grow-1 m-0" />
         </div>
         <form onSubmit={handleSubmit}>
-          {/* <div className="mb-3">
+          <div className="mb-3">
             <label htmlFor="name" className="form-label">Full Name <span className="required-asterisk">*</span></label>
             <input 
               type="text" 
@@ -51,7 +60,7 @@ export default function SignUpPage() {
               required 
               className="form-control" 
             />
-          </div> */}
+          </div>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">Email Address <span className="required-asterisk">*</span></label>
             <input 

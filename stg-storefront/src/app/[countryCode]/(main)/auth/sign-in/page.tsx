@@ -1,10 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import React from "react";
 import GoogleIcon from "../../../../../components/icons/GoogleIcon";
 import AppleIcon from "../../../../../components/icons/AppleIcon";
+import { useAuthSignIn } from "../../../../../hooks/useAuthSignIn";
 import "../../../../../styles/auth.css";
 
 export default function SignInPage() {
+  const { handleGoogleSignIn, handleAppleSignIn } = useAuthSignIn();
+
   return (
     <div className="container-fluid d-flex justify-content-center align-items-center auth-container px-3">
       <div className="card p-3 p-md-4 border-0 auth-card">
@@ -14,11 +19,17 @@ export default function SignInPage() {
         <span className="mb-3 text-center d-block auth-subtitle">
             Login to unlock your shopping cart and continue
         </span>
-        <button className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button">
+        <button 
+          onClick={handleGoogleSignIn}
+          className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button"
+        >
           <span className="social-icon-container"><GoogleIcon height={29} width={24} /></span>
           Continue with Google
         </button>
-        <button className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button">
+        <button 
+          onClick={handleAppleSignIn}
+          className="btn btn-outline-dark w-100 mb-3 rounded-pill border-1 position-relative d-flex align-items-center justify-content-center social-button"
+        >
           <span className="social-icon-container"><AppleIcon height={29} width={24} /></span>
           Continue with Apple
         </button>

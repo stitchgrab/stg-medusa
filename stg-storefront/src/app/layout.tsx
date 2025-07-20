@@ -4,6 +4,7 @@ import "styles/globals.css"
 import '@stripe/stripe-js'
 import { RegionProvider } from "providers/region"
 import { CartProvider } from "providers/cart"
+import AuthSessionProvider from "providers/session-provider"
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 export const metadata: Metadata = {
@@ -20,11 +21,13 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         />
       </head>
       <body>
-        <RegionProvider>
-          <CartProvider>
-            <main className="relative">{props.children}</main>
-          </CartProvider>
-        </RegionProvider>
+        <AuthSessionProvider>
+          <RegionProvider>
+            <CartProvider>
+              <main className="relative">{props.children}</main>
+            </CartProvider>
+          </RegionProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   )
