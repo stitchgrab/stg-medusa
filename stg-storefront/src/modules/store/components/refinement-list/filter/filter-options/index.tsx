@@ -12,9 +12,10 @@ interface ProductOption {
 
 interface FilterProductOptionsProps {
   options: ProductOption[]
+  defaultOpenOptions?: string[]
 }
 
-const FilterProductOptions: React.FC<FilterProductOptionsProps> = ({ options }) => {
+const FilterProductOptions: React.FC<FilterProductOptionsProps> = ({ options, defaultOpenOptions = [] }) => {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -66,7 +67,7 @@ const FilterProductOptions: React.FC<FilterProductOptionsProps> = ({ options }) 
   if (!options || options.length === 0) return null
 
   return (
-    <Accordion type="multiple">
+    <Accordion type="multiple" defaultValue={defaultOpenOptions}>
       {options.map(option => (
         <Accordion.Item key={option.id} value={option.id} title={option.title}>
           <div className="flex flex-col gap-2">

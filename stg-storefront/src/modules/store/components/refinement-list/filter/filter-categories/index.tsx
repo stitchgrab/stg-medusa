@@ -11,20 +11,9 @@ const FilterCategories: React.FC<{
   // Get the categories to display - either children or siblings
   const categoriesToShow = allCategories
 
-  console.log('=== FilterCategories Debug ===')
-  console.log('Category name:', category.name)
-  console.log('Category ID:', category.id)
-  console.log('Current pathname:', currentPathname)
-  console.log('Categories to show count:', categoriesToShow.length)
-  console.log('Categories to show:', categoriesToShow.map(c => ({ name: c.name, handle: c.handle, id: c.id })))
-
   if (categoriesToShow.length === 0) {
-    console.log('No categories to show, returning null')
-    console.log('=== End FilterCategories Debug ===')
     return null
   }
-
-  console.log('=== End FilterCategories Debug ===')
 
   return (
     <div className="space-y-2">

@@ -56,28 +56,43 @@ const FilterPrice: React.FC<FilterPriceProps> = ({ products }) => {
     if (!minPrice && !maxPrice) return []
 
     const selectedRanges: number[] = []
+    const currentMin = minPrice ? Number(minPrice) : 0
+    const currentMax = maxPrice ? Number(maxPrice) : Infinity
+
     ranges.forEach((range, idx) => {
       const rangeMin = range.min || 0
       const rangeMax = range.max || Infinity
 
-      // Check if this specific range matches the selected price range exactly
+      // Check if this range overlaps with the current price selection
+      let isSelected = false
+
       if (minPrice && maxPrice) {
-        // For exact range match
-        if (rangeMin === Number(minPrice) && rangeMax === Number(maxPrice)) {
-          selectedRanges.push(idx)
+        // Both min and max are set - check if this range contributes to the selection
+        // A range is selected if it's within or overlaps with the current selection
+        if (rangeMin <= currentMin && rangeMax >= currentMax) {
+          isSelected = true
+        } else if (rangeMin >= currentMin && rangeMin <= currentMax) {
+          isSelected = true
+        } else if (rangeMax >= currentMin && rangeMax <= currentMax) {
+          isSelected = true
         }
-      } else if (minPrice && !maxPrice) {
-        // For "Over X" ranges
-        if (rangeMin === Number(minPrice) && rangeMax === null) {
-          selectedRanges.push(idx)
+      } else if (minPrice) {
+        // Only min is set - check if this range starts at or after the min price
+        if (rangeMin >= currentMin) {
+          isSelected = true
         }
-      } else if (!minPrice && maxPrice) {
-        // For "Under X" ranges
-        if (rangeMin === null && rangeMax === Number(maxPrice)) {
-          selectedRanges.push(idx)
+      } else if (maxPrice) {
+        // Only max is set - check if this range ends at or before the max price
+        if (rangeMax <= currentMax) {
+          isSelected = true
         }
       }
+
+      if (isSelected) {
+        selectedRanges.push(idx)
+      }
     })
+
     return selectedRanges
   }
 
@@ -104,7 +119,7 @@ const FilterPrice: React.FC<FilterPriceProps> = ({ products }) => {
       const minPrice = Math.min(...selectedRanges.map(r => r.min || 0))
       const maxPrice = Math.max(...selectedRanges.map(r => r.max || Infinity))
 
-      console.log('Setting price params:', { selectedRanges, minPrice, maxPrice })
+
 
       if (minPrice > 0) params.set('minPrice', minPrice.toString())
       if (maxPrice < Infinity) params.set('maxPrice', maxPrice.toString())
@@ -121,6 +136,8 @@ const FilterPrice: React.FC<FilterPriceProps> = ({ products }) => {
         ranges.map((range, idx) => {
           const currentSelected = getSelectedRanges()
           const isChecked = currentSelected.includes(idx)
+
+
 
           return (
             <label key={idx} className="flex items-center gap-2 cursor-pointer text-sm">

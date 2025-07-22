@@ -11,6 +11,7 @@ import { HttpTypes } from "@medusajs/types"
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { listCategories } from "@lib/data/categories"
+import { filterProducts, parseSearchParamsToFilters } from "@lib/util/filter-products"
 
 export default async function CategoryTemplate({
   category,
@@ -92,72 +93,20 @@ export default async function CategoryTemplate({
   if (!region) notFound()
 
   // Filter products based on query params
-  let filteredProducts = allProducts
   const params = await searchParams
+  const filteredProducts = params ? (() => {
+    const { priceFilter, optionFilter } = parseSearchParamsToFilters(params)
 
-  if (params) {
-    // Filter by price
-    const minPrice = params.minPrice ? Number(params.minPrice) : undefined
-    const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined
+    // Apply price and option filters only
+    // Category filtering is handled by URL state preservation
+    let result = allProducts
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      console.log('Filtering by price:', { minPrice, maxPrice })
-      console.log('Total products before filtering:', filteredProducts.length)
-
-      filteredProducts = filteredProducts.filter((product: any) =>
-        product.variants?.some((variant: any) => {
-          // Use the new price structure with calculated_price
-          if (variant.calculated_price) {
-            const priceValue = variant.calculated_price.calculated_amount / 100
-            console.log(`Product ${product.title}, Variant ${variant.id}: $${priceValue}`)
-
-            if (minPrice !== undefined && priceValue < minPrice) {
-              console.log(`  - Excluded: price $${priceValue} < min $${minPrice}`)
-              return false
-            }
-            if (maxPrice !== undefined && priceValue > maxPrice) {
-              console.log(`  - Excluded: price $${priceValue} > max $${maxPrice}`)
-              return false
-            }
-            console.log(`  - Included: price $${priceValue} within range`)
-            return true
-          }
-          return false
-        })
-      )
-
-      console.log('Total products after filtering:', filteredProducts.length)
+    if (Object.keys(priceFilter).length > 0 || Object.keys(optionFilter).length > 0) {
+      result = filterProducts(allProducts, priceFilter, optionFilter)
     }
 
-    // Filter by options - only show products that have variants with the selected options
-    const options: Record<string, string[]> = {}
-    Object.entries(params).forEach(([key, value]) => {
-      if (key.startsWith('opt_')) {
-        const optionTitle = key.replace('opt_', '')
-        if (!options[optionTitle]) {
-          options[optionTitle] = []
-        }
-        // Handle both single values and arrays
-        if (Array.isArray(value)) {
-          options[optionTitle].push(...value)
-        } else if (typeof value === 'string') {
-          options[optionTitle].push(value)
-        }
-      }
-    })
-
-    Object.entries(options).forEach(([optionTitle, values]) => {
-      if (Array.isArray(values) && values.length > 0) {
-        filteredProducts = filteredProducts.filter((product: any) =>
-          product.variants?.some((variant: any) =>
-            variant.options?.some((opt: any) =>
-              opt.option_title === optionTitle && values.includes(opt.value)
-            )
-          )
-        )
-      }
-    })
-  }
+    return result
+  })() : allProducts
 
   return (
     <div

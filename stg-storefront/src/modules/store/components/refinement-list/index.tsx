@@ -31,17 +31,6 @@ const RefinementList = ({ category, products = [] }: RefinementListProps) => {
     [searchParams]
   )
 
-  const setQueryParams = (name: string, value: string) => {
-    const query = createQueryString(name, value)
-    router.push(`${pathname}?${query}`)
-  }
-
-  const setMultiQueryParams = (name: string, values: string[]) => {
-    const params = new URLSearchParams(searchParams)
-    params.delete(name)
-    values.forEach(value => params.append(name, value))
-    router.push(`${pathname}?${params.toString()}`)
-  }
 
   useEffect(() => {
     if (category?.category_children && category?.category_children?.length > 0) {
@@ -100,9 +89,31 @@ const RefinementList = ({ category, products = [] }: RefinementListProps) => {
     values: Array.from(o.values),
   }))
 
+  const retrieveDefaultValues = () => {
+    const params = new URLSearchParams(searchParams)
+    const categories = pathname.includes('categories') ? "categories" : null
+    const price = params.get('minPrice') || params.get('maxPrice') ? "price" : null
+
+    const defaultValues = [categories, price]
+    return defaultValues.filter(value => value !== null)
+  }
+
+  const retrieveOptionDefaultValues = () => {
+    const params = new URLSearchParams(searchParams)
+
+    // Find option IDs for Color and Size based on their titles
+    const colorOption = allOptions.find(opt => opt.title === 'Color')
+    const sizeOption = allOptions.find(opt => opt.title === 'Size')
+    const color = params.get('opt_Color') && colorOption ? colorOption.id : null
+    const size = params.get('opt_Size') && sizeOption ? sizeOption.id : null
+
+    const defaultValues = [color, size]
+    return defaultValues.filter(value => value !== null)
+  }
+
   return (
     <div className="flex small:flex-col gap-12 py-4 small:px-0 pl-6 small:min-w-[250px]">
-      <Accordion type="multiple">
+      <Accordion type="multiple" defaultValue={retrieveDefaultValues()}>
         {category && (
           <Accordion.Item value="categories" title="Categories">
             <FilterCategories category={category} currentPathname={pathname} allCategories={allCategories} />
@@ -111,7 +122,7 @@ const RefinementList = ({ category, products = [] }: RefinementListProps) => {
         <Accordion.Item value="price" title="Price">
           <FilterPrice products={allPrices} />
         </Accordion.Item>
-        <FilterProductOptions options={allOptions} />
+        <FilterProductOptions options={allOptions} defaultOpenOptions={retrieveOptionDefaultValues()} />
       </Accordion>
     </div>
   )

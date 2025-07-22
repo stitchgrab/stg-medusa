@@ -52,7 +52,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const description = productCategory.description ?? `${title} category.`
 
     return {
-      title: `${title} | StitchGrab`,
+      title: `${title}`,
       description,
       alternates: {
         canonical: `${params.category.join("/")}`,
@@ -80,6 +80,7 @@ export default async function CategoryPage(props: Props) {
       sortBy={sortBy}
       page={page}
       countryCode={params.countryCode}
+      searchParams={searchParams}
     />
   )
 }
