@@ -1,79 +1,160 @@
 "use client"
 
-import { Button } from "@medusajs/ui"
-import { useRouter } from "next/navigation"
+import Image from "next/image"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const categories = [
   {
-    name: "Men",
-    description: "Shop All Men",
-    image: "/images/categories/men.jpg",
-    href: "/categories/men",
-    color: "from-blue-500 to-blue-600"
+    name: "For Men",
+    handle: "men",
+    image: "/images/categories/men.png", // ✅ Available asset
+    href: "/store?categories=men"
   },
   {
-    name: "Women",
-    description: "Shop All Women",
-    image: "/images/categories/women.jpg",
-    href: "/categories/women",
-    color: "from-pink-500 to-pink-600"
+    name: "For Women",
+    handle: "women",
+    image: "/images/categories/women.png", // ✅ Available asset
+    href: "/store?categories=women"
   },
   {
-    name: "Brands",
-    description: "Shop by Brand",
-    image: "/images/categories/brands.jpg",
-    href: "/categories/brands",
-    color: "from-purple-500 to-purple-600"
+    name: "Vintage",
+    handle: "vintage",
+    image: "/images/categories/vintage.png", // ✅ Available asset
+    href: "/store?categories=vintage"
+  },
+  {
+    name: "Streetwear",
+    handle: "streetwear",
+    image: "/images/categories/streetwear.png", // ✅ Available asset
+    href: "/store?categories=streetwear"
+  },
+  {
+    name: "Accessories",
+    handle: "accessories",
+    image: "/images/categories/accessories.png", // ✅ Available asset
+    href: "/store?categories=accessories"
+  },
+  {
+    name: "Denim",
+    handle: "denim",
+    image: "/images/categories/denim.png", // ✅ Available asset
+    href: "/store?categories=denim"
   }
 ]
 
 const Categories = () => {
-  const router = useRouter()
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-stitchgrab-primary mb-4">
+    <section className="py-8 lg:py-12 bg-white">
+      <div className="content-container">
+        {/* Section Header */}
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 mb-1">Shop by category: find your style delivered fast</p>
+          <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-wide">
             SHOP BY CATEGORIES
           </h2>
-          <p className="text-lg text-stitchgrab-text-light max-w-2xl mx-auto">
-            Discover our curated collections with same-day delivery
-          </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {categories.map((category) => (
-            <div
-              key={category.name}
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-br from-stitchgrab-secondary to-white border border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+        {/* Desktop Grid - 3x2 */}
+        <div className="hidden lg:grid lg:grid-cols-3 gap-6">
+          {categories.map((category, index) => (
+            <LocalizedClientLink
+              key={category.handle}
+              href={category.href}
+              className="group relative overflow-hidden rounded-2xl aspect-[4/5] hover:scale-[1.02] transition-transform duration-300"
             >
-              <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center p-4">
-                  <div className={`w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br ${category.color} flex items-center justify-center`}>
-                    <span className="text-white font-bold text-lg">
-                      {category.name.charAt(0)}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-stitchgrab-primary text-lg mb-1">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-stitchgrab-text-light">
-                    {category.description}
-                  </p>
-                </div>
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  sizes="33vw"
+                  className="object-cover"
+                  priority={index < 3}
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               </div>
 
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                <Button
-                  variant="secondary"
-                  size="small"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white text-stitchgrab-primary hover:bg-stitchgrab-accent hover:text-white"
-                  onClick={() => router.push(category.href)}
-                >
-                  Shop Now
-                </Button>
+              {/* Category Label */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <h3 className="text-white font-bold text-lg lg:text-xl tracking-wide drop-shadow-lg">
+                  {category.name}
+                </h3>
               </div>
-            </div>
+
+              {/* Hover Effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+            </LocalizedClientLink>
+          ))}
+        </div>
+
+        {/* Tablet Grid - 2x3 */}
+        <div className="hidden md:grid lg:hidden md:grid-cols-2 gap-6">
+          {categories.map((category, index) => (
+            <LocalizedClientLink
+              key={category.handle}
+              href={category.href}
+              className="group relative overflow-hidden rounded-2xl aspect-[4/5] hover:scale-[1.02] transition-transform duration-300"
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  sizes="50vw"
+                  className="object-cover"
+                  priority={index < 2}
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              </div>
+
+              {/* Category Label */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <h3 className="text-white font-bold text-lg tracking-wide drop-shadow-lg">
+                  {category.name}
+                </h3>
+              </div>
+
+              {/* Hover Effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+            </LocalizedClientLink>
+          ))}
+        </div>
+
+        {/* Mobile Grid - 2x3 */}
+        <div className="md:hidden grid grid-cols-2 gap-4">
+          {categories.map((category, index) => (
+            <LocalizedClientLink
+              key={category.handle}
+              href={category.href}
+              className="group relative overflow-hidden rounded-2xl aspect-[4/5] hover:scale-[1.02] transition-transform duration-300"
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  sizes="50vw"
+                  className="object-cover"
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              </div>
+
+              {/* Category Label */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <h3 className="text-white font-bold text-base tracking-wide drop-shadow-lg">
+                  {category.name}
+                </h3>
+              </div>
+
+              {/* Hover Effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+            </LocalizedClientLink>
           ))}
         </div>
       </div>

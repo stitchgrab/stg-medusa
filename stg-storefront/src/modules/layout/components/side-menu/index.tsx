@@ -8,6 +8,7 @@ import { Fragment } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountrySelect from "../country-select"
 import { HttpTypes } from "@medusajs/types"
+import Hamburger from "@modules/common/icons/hamburger"
 
 const SideMenuItems = {
   Home: "/",
@@ -28,9 +29,9 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
               <div className="relative flex h-full">
                 <Popover.Button
                   data-testid="nav-menu-button"
-                  className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-ui-fg-base"
+                  className="relative h-full flex items-center p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none"
                 >
-                  Menu
+                  <Hamburger size="18" className="sm:w-5 sm:h-5 text-gray-600" />
                 </Popover.Button>
               </div>
 

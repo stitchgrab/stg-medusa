@@ -7,7 +7,7 @@ checkEnvVariables()
  */
 const nextConfig = {
   reactStrictMode: true,
-  allowedDevOrigins: ['flamingo-tough-blindly.ngrok-free.app', 'storefront-flamingo-tough-blindly.ngrok-free.app'],
+  // allowedDevOrigins: ['*-flamingo-tough-blindly.ngrok-free.app'],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -24,10 +24,6 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "loremflickr.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
       },
       {
         protocol: "https",

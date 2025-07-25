@@ -16,6 +16,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
+import Cart from "@modules/common/icons/cart"
 
 const CartDropdown = ({
   cart: cartState,
@@ -81,11 +82,16 @@ const CartDropdown = ({
     >
       <Popover className="relative h-full">
         <PopoverButton className="h-full">
-          <LocalizedClientLink
-            className="hover:text-ui-fg-base"
-            href="/cart"
-            data-testid="nav-cart-link"
-          >{`Cart (${totalItems})`}</LocalizedClientLink>
+          <div className="hover:text-ui-fg-base relative flex items-center">
+            <Cart size="20" className="text-gray-600" />
+            {totalItems > 0 && (
+              <span 
+                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
+              >
+                {totalItems > 99 ? '99+' : totalItems}
+              </span>
+            )}
+          </div>
         </PopoverButton>
         <Transition
           show={cartDropdownOpen}

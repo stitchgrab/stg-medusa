@@ -1,84 +1,160 @@
-import { Button } from "@medusajs/ui"
+"use client"
+
+import Image from "next/image"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const brands = [
   {
+    id: "new-balance",
     name: "New Balance",
-    description: "Premium athletic footwear",
-    image: "/images/brands/new-balance.jpg",
-    href: "/store?brands=new-balance"
+    image: "/images/best-sellers/newbalance.png", // ✅ Available asset
+    href: "/brands/new-balance"
   },
   {
-    name: "Soleman Fine footwear",
-    description: "Handcrafted luxury shoes",
-    image: "/images/brands/soleman.jpg",
-    href: "/store?brands=soleman"
+    id: "na-lei",
+    name: "Na Lei Boho Clothier", 
+    image: "/images/best-sellers/nalei.png", // ✅ Available asset
+    href: "/brands/na-lei"
   },
   {
+    id: "trth-brand",
     name: "Trth Brand",
-    description: "Sustainable fashion",
-    image: "/images/brands/trth.jpg",
-    href: "/store?brands=trth"
+    image: "/images/best-sellers/trth.png", // ✅ Available asset
+    href: "/brands/trth"
   },
   {
-    name: "Na Lei Boho Clothier",
-    description: "Bohemian style clothing",
-    image: "/images/brands/na-lei.jpg",
-    href: "/store?brands=na-lei"
+    id: "soleman",
+    name: "Soleman",
+    image: "/images/best-sellers/soleman.png", // ✅ Available asset
+    href: "/brands/soleman"
   }
 ]
 
 const BestSellers = () => {
   return (
-    <section className="py-16 bg-stitchgrab-secondary">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-stitchgrab-primary mb-4">
+    <section className="py-8 lg:py-12 bg-white">
+      <div className="content-container">
+        {/* Section Header */}
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 mb-1">Top trends, no wait: best sellers delivered today</p>
+          <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-wide">
             BEST SELLERS
           </h2>
-          <p className="text-lg text-stitchgrab-text-light max-w-2xl mx-auto">
-            Top trends, no wait: best sellers delivered same day
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {brands.map((brand) => (
-            <div
-              key={brand.name}
-              className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+        {/* Desktop Grid - 4 columns on large, 2 on medium */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-6">
+          {brands.map((brand, index) => (
+            <LocalizedClientLink
+              key={brand.id}
+              href={brand.href}
+              className="group relative overflow-hidden rounded-2xl aspect-square hover:scale-[1.02] transition-transform duration-300"
             >
-              <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-6">
-                <div className="text-center">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-stitchgrab-accent flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">
-                      {brand.name.split(' ').map(word => word.charAt(0)).join('')}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-stitchgrab-primary text-xl mb-2">
-                    {brand.name}
-                  </h3>
-                  <p className="text-sm text-stitchgrab-text-light mb-4">
-                    {brand.description}
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    className="bg-stitchgrab-accent text-white hover:bg-stitchgrab-accent/90"
-                  >
-                    Shop Brand
-                  </Button>
-                </div>
+              {/* Brand Image */}
+              <div className="absolute inset-0">
+                <Image
+                  src={brand.image}
+                  alt={brand.name}
+                  fill
+                  sizes="25vw"
+                  className="object-cover"
+                  priority={index < 2}
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               </div>
-            </div>
+
+              {/* Brand Label */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <h3 className="text-white font-bold text-lg tracking-wide drop-shadow-lg">
+                  {brand.name}
+                </h3>
+              </div>
+
+              {/* Hover Effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+            </LocalizedClientLink>
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <Button
-            size="large"
-            className="bg-stitchgrab-primary text-white hover:bg-stitchgrab-primary/90 px-8 py-4 text-lg font-semibold rounded-lg"
-          >
-            View All Brands
-          </Button>
+        {/* Tablet Grid - 2x2 */}
+        <div className="hidden md:grid lg:hidden md:grid-cols-2 gap-6">
+          {brands.map((brand, index) => (
+            <LocalizedClientLink
+              key={brand.id}
+              href={brand.href}
+              className="group relative overflow-hidden rounded-2xl aspect-square hover:scale-[1.02] transition-transform duration-300"
+            >
+              {/* Brand Image */}
+              <div className="absolute inset-0">
+                <Image
+                  src={brand.image}
+                  alt={brand.name}
+                  fill
+                  sizes="50vw"
+                  className="object-cover"
+                  priority={index < 2}
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              </div>
+
+              {/* Brand Label */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <h3 className="text-white font-bold text-lg tracking-wide drop-shadow-lg">
+                  {brand.name}
+                </h3>
+              </div>
+
+              {/* Hover Effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+            </LocalizedClientLink>
+          ))}
+        </div>
+
+        {/* Mobile Horizontal Scroll */}
+        <div className="md:hidden">
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
+            {brands.map((brand, index) => (
+              <LocalizedClientLink
+                key={brand.id}
+                href={brand.href}
+                className="group relative overflow-hidden rounded-2xl aspect-square flex-none w-64 snap-start hover:scale-[1.02] transition-transform duration-300"
+              >
+                {/* Brand Image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src={brand.image}
+                    alt={brand.name}
+                    fill
+                    sizes="256px"
+                    className="object-cover"
+                  />
+                  {/* Gradient overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                </div>
+
+                {/* Brand Label */}
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-white font-bold text-lg tracking-wide drop-shadow-lg">
+                    {brand.name}
+                  </h3>
+                </div>
+
+                {/* Hover Effect */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+              </LocalizedClientLink>
+            ))}
+          </div>
+        </div>
+
+        {/* View All Button */}
+        <div className="text-center mt-8">
+          <LocalizedClientLink href="/brands">
+            <button className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+              View All Brands →
+            </button>
+          </LocalizedClientLink>
         </div>
       </div>
     </section>
