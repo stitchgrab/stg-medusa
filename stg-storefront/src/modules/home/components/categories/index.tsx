@@ -8,37 +8,37 @@ const categories = [
     name: "For Men",
     handle: "men",
     image: "/images/categories/men.png", // ✅ Available asset
-    href: "/store?categories=men"
+    href: "/categories/men"
   },
   {
     name: "For Women",
     handle: "women",
     image: "/images/categories/women.png", // ✅ Available asset
-    href: "/store?categories=women"
+    href: "/categories/women"
   },
   {
     name: "Vintage",
     handle: "vintage",
     image: "/images/categories/vintage.png", // ✅ Available asset
-    href: "/store?categories=vintage"
+    href: "/categories/women-vintage"
   },
   {
     name: "Streetwear",
     handle: "streetwear",
     image: "/images/categories/streetwear.png", // ✅ Available asset
-    href: "/store?categories=streetwear"
+    href: "/categories/men-streetwear"
   },
   {
     name: "Accessories",
     handle: "accessories",
     image: "/images/categories/accessories.png", // ✅ Available asset
-    href: "/store?categories=accessories"
+    href: "/categories/women-accessories"
   },
   {
     name: "Denim",
     handle: "denim",
     image: "/images/categories/denim.png", // ✅ Available asset
-    href: "/store?categories=denim"
+    href: "/categories/women-denim"
   }
 ]
 
