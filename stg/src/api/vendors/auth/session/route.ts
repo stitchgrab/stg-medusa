@@ -1,14 +1,35 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
+export const OPTIONS = async (
+  req: MedusaRequest,
+  res: MedusaResponse
+) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
+  return res.status(200).end()
+}
+
 export const GET = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
+
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
   try {
-    const sessionToken = req.cookies.get("vendor_session")?.value
+    // Access cookies from the request
+    const sessionToken = req.cookies?.vendor_session
+
+    console.log("Session check - cookies:", req.cookies)
+    console.log("Session check - sessionToken:", sessionToken)
 
     if (!sessionToken) {
       return res.status(401).json({
@@ -29,6 +50,8 @@ export const GET = async (
 
     const vendorAdminId = tokenParts[1]
 
+    console.log("Session check - vendorAdminId:", vendorAdminId)
+
     // Find vendor admin by ID
     const { data: vendorAdmins } = await query.graph({
       entity: "vendor_admin",
@@ -37,6 +60,8 @@ export const GET = async (
         id: [vendorAdminId],
       },
     })
+
+    console.log("Session check - found vendor admins:", vendorAdmins.length)
 
     if (!vendorAdmins.length) {
       return res.status(401).json({

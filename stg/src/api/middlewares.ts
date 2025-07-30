@@ -20,16 +20,22 @@ export default defineMiddlewares({
       ],
     },
     {
-      matcher: "/vendors/*",
+      matcher: "/vendors/products",
+      method: ["POST"],
+      middlewares: [
+        validateAndTransformBody(AdminCreateProduct),
+      ],
+    },
+    {
+      matcher: "/vendors/orders/*",
       middlewares: [
         authenticate("vendor", ["session", "bearer"]),
       ],
     },
     {
-      matcher: "/vendors/products",
-      method: ["POST"],
+      matcher: "/vendors/products/*",
       middlewares: [
-        validateAndTransformBody(AdminCreateProduct),
+        authenticate("vendor", ["session", "bearer"]),
       ],
     },
   ],

@@ -9,16 +9,41 @@ export const PostVendorLoginSchema = z.object({
 
 type RequestBody = z.infer<typeof PostVendorLoginSchema>
 
+export const OPTIONS = async (
+  req: MedusaRequest,
+  res: MedusaResponse
+) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
+  return res.status(200).end()
+}
+
 export const POST = async (
   req: MedusaRequest<RequestBody>,
   res: MedusaResponse
 ) => {
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { email, password } = req.validatedBody
-
-  console.log("Login attempt for email:", email)
+  // Set CORS headers for all requests
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
 
   try {
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+    // Access the request body from the validated body
+    const { email, password } = req.body as RequestBody
+
+    console.log("Login attempt for email:", email)
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      })
+    }
+
     // Find vendor admin by email
     const { data: vendorAdmins } = await query.graph({
       entity: "vendor_admin",
