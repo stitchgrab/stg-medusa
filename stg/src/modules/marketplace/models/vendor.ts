@@ -9,6 +9,11 @@ const Vendor = model.define("vendor", {
   admins: model.hasMany(() => VendorAdmin, {
     mappedBy: "vendor",
   }),
+  businessHours: model.json().nullable(),
+  specialHours: model.json().nullable(), // For holidays, vacations, special events
+  address: model.json().nullable(),
+  social_links: model.json().nullable(),
+  phone: model.text().nullable(),
 })
 
 export default Vendor

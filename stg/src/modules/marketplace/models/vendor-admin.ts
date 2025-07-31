@@ -9,6 +9,7 @@ const VendorAdmin = model.define("vendor_admin", {
   vendor: model.belongsTo(() => Vendor, {
     mappedBy: "admins",
   }),
+  phone: model.text().nullable(),
 })
 
 export default VendorAdmin

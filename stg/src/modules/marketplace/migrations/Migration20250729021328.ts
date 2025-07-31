@@ -14,7 +14,8 @@ export class Migration20250729021328 extends Migration {
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_vendor_admin_vendor_id" ON "vendor_admin" (vendor_id) WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_vendor_admin_deleted_at" ON "vendor_admin" (deleted_at) WHERE deleted_at IS NULL;`);
 
-    this.addSql(`alter table if exists "vendor_admin" add constraint "vendor_admin_vendor_id_foreign" foreign key ("vendor_id") references "vendor" ("id") on update cascade;`);
+    // Try to add the foreign key constraint, but don't fail if it already exists
+    this.addSql(`DO $$ BEGIN ALTER TABLE "vendor_admin" ADD CONSTRAINT "vendor_admin_vendor_id_foreign" FOREIGN KEY ("vendor_id") REFERENCES "vendor" ("id") ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;`);
   }
 
   override async down(): Promise<void> {

@@ -27,6 +27,13 @@
     },
     {
       "type": "node-terminal",
+      "name": "Run Script: dev (vendors frontend)",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/stg-vendors"
+    },
+    {
+      "type": "node-terminal",
       "name": "Ngrok",
       "request": "launch",
       "command": "ngrok start --all --config ngrok.yml",

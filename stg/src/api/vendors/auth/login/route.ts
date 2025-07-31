@@ -78,6 +78,7 @@ export const POST = async (
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      domain: "localhost", // Ensure cookie works across localhost ports
     })
 
     res.json({
