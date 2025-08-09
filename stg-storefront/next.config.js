@@ -27,6 +27,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "*.unsplash.com",
+      },
+      {
+        protocol: "https",
         hostname: "flamingo-tough-blindly.ngrok-free.app",
       },
       {

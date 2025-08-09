@@ -92,8 +92,24 @@ To get started with the project, clone the GitHub repository to your local machi
 
 ## Developing Locally
 
-### Starting the Backend
-1. **Start the Medusa server**:
+### Starting All Services
+1. **Start both Medusa backend and vendor dashboard**:
+   ```bash
+   # Option 1: Use the shell script (recommended)
+   ./start-dev.sh
+   
+   # Option 2: Start services individually
+   cd stg && npm run dev        # Medusa backend only
+   cd stg-vendors && npm run dev # Vendor dashboard only
+   ```
+
+2. **Access the services**:
+   - Medusa Backend: http://localhost:9000
+   - Vendor Dashboard: http://localhost:3001
+   - Storefront: http://localhost:8000 (if running)
+
+### Starting Individual Services
+1. **Start the Medusa server only**:
    ```bash
    cd stg
    npm run dev

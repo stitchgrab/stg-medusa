@@ -1,4 +1,5 @@
-import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
+import { MARKETPLACE_MODULE } from './src/modules/marketplace'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -28,6 +29,9 @@ module.exports = defineConfig({
           }
         ]
       }
+    },
+    {
+      resolve: "./src/modules/marketplace",
     }
   ],
 })
