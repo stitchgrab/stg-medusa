@@ -1,15 +1,13 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../../utils/cors"
+import { validateVendorSession } from "../../../../utils/vendor-auth"
 
 export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const GET = async (
@@ -17,51 +15,38 @@ export const GET = async (
   res: MedusaResponse
 ) => {
   // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
+  setVendorCorsHeaders(res)
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
   try {
-    // Access cookies from the request
-    const sessionToken = req.cookies?.vendor_session
+    const payload = await validateVendorSession(req)
 
-    console.log("Session check - cookies:", req.cookies)
-    console.log("Session check - sessionToken:", sessionToken)
-
-    if (!sessionToken) {
-      return res.status(401).json({
-        message: "No session found",
-        authenticated: false,
-      })
-    }
-
-    // Parse the session token to get vendor admin ID
-    // In a real implementation, you would verify a proper JWT token
-    const tokenParts = sessionToken.split("_")
-    if (tokenParts.length < 3 || tokenParts[0] !== "vendor") {
-      return res.status(401).json({
-        message: "Invalid session token",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdminId = tokenParts[1]
-
-    console.log("Session check - vendorAdminId:", vendorAdminId)
-
-    // Find vendor admin by ID
+    // Get vendor admin with vendor information
     const { data: vendorAdmins } = await query.graph({
       entity: "vendor_admin",
-      fields: ["id", "email", "first_name", "last_name", "vendor.id", "vendor.name", "vendor.handle"],
+      fields: [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "created_at",
+        "updated_at",
+        "vendor.id",
+        "vendor.name",
+        "vendor.handle",
+        "vendor.logo",
+        "vendor.businessHours",
+        "vendor.specialHours",
+        "vendor.address",
+        "vendor.social_links",
+        "vendor.phone",
+      ],
       filters: {
-        id: [vendorAdminId],
+        id: [payload.vendor_admin_id],
       },
     })
-
-    console.log("Session check - found vendor admins:", vendorAdmins.length)
 
     if (!vendorAdmins.length) {
       return res.status(401).json({
@@ -76,21 +61,44 @@ export const GET = async (
       authenticated: true,
       vendor_admin: {
         id: vendorAdmin.id,
-        email: vendorAdmin.email,
         first_name: vendorAdmin.first_name,
         last_name: vendorAdmin.last_name,
+        email: vendorAdmin.email,
+        phone: vendorAdmin.phone,
+        created_at: vendorAdmin.created_at,
+        updated_at: vendorAdmin.updated_at,
       },
       vendor: {
         id: vendorAdmin.vendor.id,
         name: vendorAdmin.vendor.name,
         handle: vendorAdmin.vendor.handle,
+        logo: vendorAdmin.vendor.logo,
+        businessHours: vendorAdmin.vendor.businessHours,
+        specialHours: vendorAdmin.vendor.specialHours,
+        address: vendorAdmin.vendor.address,
+        social_links: vendorAdmin.vendor.social_links,
+        phone: vendorAdmin.vendor.phone,
       },
     })
   } catch (error) {
+    if (error instanceof Error && error.message === "No session found") {
+      return res.status(401).json({
+        message: "No session found",
+        authenticated: false,
+      })
+    }
+
+    if (error instanceof Error && error.message === "Invalid or expired session") {
+      return res.status(401).json({
+        message: "Invalid or expired session",
+        authenticated: false,
+      })
+    }
+
     console.error("Vendor session verification error:", error)
-    res.status(500).json({
-      message: "Internal server error",
+    return res.status(401).json({
+      message: "Session verification failed",
       authenticated: false,
-    })
+    }) 
   }
 } 

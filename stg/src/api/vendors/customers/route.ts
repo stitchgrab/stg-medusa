@@ -1,17 +1,14 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import getVendorCustomersWorkflow from "../../../workflows/marketplace/get-vendor-customers"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../utils/cors"
+import { validateVendorSession } from "../../../utils/vendor-auth"
 
 export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const GET = async (
@@ -19,35 +16,11 @@ export const GET = async (
   res: MedusaResponse
 ) => {
   // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-
-  
+  setVendorCorsHeaders(res)
 
   try {
-    // Access cookies from the request
-    const sessionToken = req.cookies?.vendor_session
-
-    if (!sessionToken) {
-      return res.status(401).json({
-        message: "No session found",
-        authenticated: false,
-      })
-    }
-
-    // Parse the session token to get vendor admin ID
-    const tokenParts = sessionToken.split("_")
-    if (tokenParts.length < 3 || tokenParts[0] !== "vendor") {
-      return res.status(401).json({
-        message: "Invalid session token",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdminId = tokenParts[1]
+    const payload = await validateVendorSession(req)
+    const vendorAdminId = payload.vendor_admin_id
 
     // Use the workflow to get vendor customers
     const { result } = await getVendorCustomersWorkflow(req.scope).run({
@@ -60,8 +33,22 @@ export const GET = async (
       customers: result.customers,
     })
   } catch (error) {
+    if (error instanceof Error && error.message === "No session found") {
+      return res.status(401).json({
+        message: "No session found",
+        authenticated: false,
+      })
+    }
+
+    if (error instanceof Error && error.message === "Invalid or expired session") {
+      return res.status(401).json({
+        message: "Invalid or expired session",
+        authenticated: false,
+      })
+    }
+
     console.error("Vendor customers error:", error)
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
       error: error.message,
     })

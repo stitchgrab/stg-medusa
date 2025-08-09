@@ -1,16 +1,52 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { verifyVendorToken, extractVendorToken } from "../../utils/jwt"
 
-export const corsMiddleware = (req: MedusaRequest, res: MedusaResponse, next: () => void) => {
-  // Set CORS headers for all vendor routes
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
+export const vendorAuthMiddleware = async (
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: () => void
+) => {
+  try {
+    // Get token from cookie or Authorization header
+    const token = req.cookies.vendor_session || extractVendorToken(req.headers.authorization)
 
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return res.status(200).end()
+    if (!token) {
+      return res.status(401).json({
+        message: "Authentication required",
+      })
+    }
+
+    // Verify JWT token
+    const payload = verifyVendorToken(token)
+    if (!payload) {
+      return res.status(401).json({
+        message: "Invalid or expired token",
+      })
+    }
+
+    // Add vendor context to request
+    req.vendor_context = {
+      vendor_admin_id: payload.vendor_admin_id,
+      vendor_id: payload.vendor_id,
+      email: payload.email,
+    }
+
+    next()
+  } catch (error) {
+    console.error("Vendor auth middleware error:", error)
+    return res.status(401).json({
+      message: "Authentication failed",
+    })
   }
+}
 
-  next()
+// Extend MedusaRequest type to include vendor context
+declare module "@medusajs/framework/http" {
+  interface MedusaRequest {
+    vendor_context?: {
+      vendor_admin_id: string
+      vendor_id: string
+      email: string
+    }
+  }
 } 

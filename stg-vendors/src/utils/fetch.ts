@@ -1,5 +1,11 @@
 const BASE_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 
+// Import token function (avoiding circular dependency)
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('vendor_token')
+}
+
 type FetchOptions = RequestInit & {
   headers?: Record<string, string>
   withCredentials?: boolean
@@ -23,11 +29,16 @@ export async function fetchFromBackend<T = any>(
 ): Promise<T> {
   const url = getBackendUrl(path)
 
+  // Get auth token and add to headers if available
+  const token = getAuthToken()
+  const authHeaders = { Authorization: `Bearer ${token}` }
+
   const fetchOptions: RequestInit = {
     ...options,
     credentials: options.withCredentials ? "include" : options.credentials,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...(options.headers || {}),
     },
   }
@@ -52,7 +63,8 @@ export async function getFromBackend<T = any>(
   path: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  return fetchFromBackend<T>(path, { ...options, method: "GET" })
+  const { withCredentials, ...rest } = options
+  return fetchFromBackend<T>(path, { method: "GET", ...rest, credentials: withCredentials ? "include" : "omit" })
 }
 
 export async function postToBackend<T = any>(
@@ -61,13 +73,16 @@ export async function postToBackend<T = any>(
   options: FetchOptions = {}
 ): Promise<T> {
   const url = getBackendUrl(path)
-  console.log('🔍 Frontend - POST to:', url)
-  console.log('🔍 Frontend - POST data:', data)
+
+  // Get auth token and add to headers if available
+  const token = getAuthToken()
+  const authHeaders = { Authorization: `Bearer ${token}` }
 
   const response = await fetch(url, {
-    method: 'PUT',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
     body: JSON.stringify(data),
@@ -91,13 +106,16 @@ export async function putToBackend<T = any>(
   options: FetchOptions = {}
 ): Promise<T> {
   const url = getBackendUrl(path)
-  console.log('🔍 Frontend - PUT to:', url)
-  console.log('🔍 Frontend - PUT data:', data)
+
+  // Get auth token and add to headers if available
+  const token = getAuthToken()
+  const authHeaders = { Authorization: `Bearer ${token}` }
 
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
     body: JSON.stringify(data),

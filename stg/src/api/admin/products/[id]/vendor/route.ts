@@ -32,10 +32,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
     const product = products[0]
 
-    // Get all vendors
+    // Get all vendors with their locations
     const { data: vendors } = await query.graph({
       entity: "vendor",
-      fields: ["id", "name", "handle"],
+      fields: [
+        "id",
+        "name",
+        "handle",
+        "locations.id",
+        "locations.name",
+        "locations.is_default"
+      ],
     })
 
     const currentVendor = product.product_vendor?.vendor

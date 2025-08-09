@@ -28,15 +28,21 @@ export default defineMiddlewares({
     },
     {
       matcher: "/vendors/orders/*",
+      method: ["GET", "POST", "PUT", "DELETE"],
+    },
+    {
+      matcher: "/vendors/products/*",
+      method: ["GET", "POST", "PUT", "DELETE"],
       middlewares: [
         authenticate("vendor", ["session", "bearer"]),
       ],
     },
     {
-      matcher: "/vendors/products/*",
-      middlewares: [
-        authenticate("vendor", ["session", "bearer"]),
-      ],
+      matcher: "/vendors/stripe/webhook",
+      method: ["POST"],
+      bodyParser: {
+        preserveRawBody: true,
+      },
     },
   ],
 })

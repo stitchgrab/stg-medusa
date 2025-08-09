@@ -17,7 +17,13 @@ import {
   Users,
   Tag,
   BellAlert,
+  MapPin,
+  ReceiptPercent,
+  Eye,
+  User,
+  Clock,
 } from '@medusajs/icons'
+import { getFromBackend, postToBackend } from '@/utils/fetch'
 
 interface VendorSession {
   authenticated: boolean
@@ -32,6 +38,22 @@ interface VendorSession {
     name: string
     handle: string
   }
+}
+
+interface OrderDetails {
+  id: string
+  display_id?: number
+  status: string
+  created_at: string
+  total: number
+  currency_code: string
+  customer?: {
+    email: string
+    first_name: string
+    last_name: string
+  } | null
+  vendor_item_count: number
+  total_item_count: number
 }
 
 interface NavigationItem {
@@ -50,7 +72,7 @@ const navigationItems: NavigationItem[] = [
   {
     title: 'Products',
     href: '/vendors/dashboard/products',
-    icon: ShoppingCart,
+    icon: Tag,
   },
   {
     title: 'Inventory',
@@ -63,9 +85,14 @@ const navigationItems: NavigationItem[] = [
     icon: Users,
   },
   {
+    title: 'Locations',
+    href: '/vendors/dashboard/locations',
+    icon: MapPin,
+  },
+  {
     title: 'Promotions',
     href: '/vendors/dashboard/promotions',
-    icon: Tag,
+    icon: ReceiptPercent,
   },
 ]
 
@@ -75,6 +102,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [vendorData, setVendorData] = useState<VendorSession | null>(null)
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
+  const [orderLoading, setOrderLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -82,17 +111,14 @@ export default function DashboardLayout({
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('http://localhost:9000/vendors/auth/session', {
-        credentials: 'include',
-      })
+      const res = await getFromBackend('/vendors/auth/session', { withCredentials: true })
 
-      if (!res.ok) {
+      if (!res.authenticated) {
         router.push('/vendors/login')
         return
       }
 
-      const data = await res.json()
-      setVendorData(data)
+      setVendorData(res)
       setLoading(false)
     } catch (err) {
       console.error('Failed to load vendor data:', err)
@@ -105,12 +131,34 @@ export default function DashboardLayout({
     checkAuth()
   }, [])
 
+  // Check if we're on an order details page and fetch order info
+  useEffect(() => {
+    const isOrderDetailsPage = pathname.match(/\/vendors\/dashboard\/orders\/([^\/]+)$/)
+
+    if (isOrderDetailsPage) {
+      const orderId = isOrderDetailsPage[1]
+      fetchOrderDetails(orderId)
+    } else {
+      setOrderDetails(null)
+    }
+  }, [pathname])
+
+  const fetchOrderDetails = async (orderId: string) => {
+    setOrderLoading(true)
+    try {
+      const response = await getFromBackend(`/vendors/orders/${orderId}`)
+      setOrderDetails(response.order)
+    } catch (error) {
+      console.error('Failed to fetch order details:', error)
+      setOrderDetails(null)
+    } finally {
+      setOrderLoading(false)
+    }
+  }
+
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:9000/vendors/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
+      await postToBackend('/vendors/auth/logout', {}, { withCredentials: true })
       router.push('/vendors/login')
     } catch (err) {
       console.error('Logout failed:', err)
@@ -160,7 +208,7 @@ export default function DashboardLayout({
             <nav className="space-y-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href || (item.href === '/vendors/dashboard/orders' && pathname.startsWith('/vendors/dashboard/orders/'))
 
                 return (
                   <Button
@@ -183,6 +231,116 @@ export default function DashboardLayout({
             </nav>
           </div>
         </div>
+
+        {/* Order Details Sidebar */}
+        {(orderDetails || orderLoading) && (
+          <div className="border-t border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Eye className="h-4 w-4 text-blue-600" />
+              <Text className="font-medium text-sm text-gray-900">Order Details</Text>
+            </div>
+
+            {orderLoading ? (
+              <div className="space-y-3">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ) : orderDetails ? (
+
+              <div className="space-y-3">
+                {/* Order ID and Status */}
+                <div>
+                  <Text className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Order #{orderDetails.display_id || orderDetails.id.slice(-8)}
+                  </Text>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge
+                      color={
+                        orderDetails.status === 'pending' ? 'orange' :
+                          orderDetails.status === 'confirmed' ? 'blue' :
+                            orderDetails.status === 'shipped' ? 'green' :
+                              orderDetails.status === 'delivered' ? 'green' :
+                                orderDetails.status === 'cancelled' ? 'red' : 'grey'
+                      }
+                      className="text-xs"
+                    >
+                      {orderDetails.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Customer */}
+                {orderDetails.customer && (
+                  <div>
+                    <Text className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Customer
+                    </Text>
+                    <div className="flex items-center gap-2 mt-1">
+                      <User className="h-3 w-3 text-gray-400" />
+                      <Text className="text-sm text-gray-900">
+                        {orderDetails.customer.first_name} {orderDetails.customer.last_name}
+                      </Text>
+                    </div>
+                    <Text className="text-xs text-gray-600 ml-5">
+                      {orderDetails.customer.email}
+                    </Text>
+                  </div>
+                )}
+
+                {/* Date */}
+                <div>
+                  <Text className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Date
+                  </Text>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Clock className="h-3 w-3 text-gray-400" />
+                    <Text className="text-sm text-gray-900">
+                      {new Date(orderDetails.created_at).toLocaleDateString()}
+                    </Text>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div>
+                  <Text className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Total (Your Portion)
+                  </Text>
+                  <Text className="text-lg font-semibold text-gray-900">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: orderDetails.currency_code,
+                    }).format(orderDetails.total / 100)}
+                  </Text>
+                  {orderDetails.vendor_item_count < orderDetails.total_item_count && (
+                    <Text className="text-xs text-gray-500">
+                      {orderDetails.vendor_item_count} of {orderDetails.total_item_count} items
+                    </Text>
+                  )}
+                </div>
+
+                {/* Back to Orders */}
+                <Button
+                  variant="transparent"
+                  size="small"
+                  className="w-full mt-4"
+                  onClick={() => router.push('/vendors/dashboard/orders')}
+                >
+                  <ArrowRightOnRectangle className="h-3 w-3 mr-1" />
+                  Back to Orders
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         {/* Settings */}
         <div className="mt-auto p-4 border-t border-gray-200">
@@ -238,6 +396,16 @@ export default function DashboardLayout({
                 <span className="text-gray-900">
                   {vendorData?.vendor_admin?.email}
                 </span>
+                {orderDetails && (
+                  <>
+                    <span>→</span>
+                    <span className="text-gray-900">Orders</span>
+                    <span>→</span>
+                    <span className="text-gray-900">
+                      #{orderDetails.display_id || orderDetails.id.slice(-8)}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">

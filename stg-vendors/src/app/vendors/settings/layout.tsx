@@ -13,6 +13,7 @@ import {
   ArrowRightOnRectangle,
   CogSixTooth,
 } from '@medusajs/icons'
+import { getFromBackend, postToBackend } from '@/utils/fetch'
 
 interface VendorSession {
   id: string
@@ -61,21 +62,14 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('http://localhost:9000/vendors/auth/session', {
-        credentials: 'include',
-      })
+      const response = await getFromBackend('/vendors/auth/session', { withCredentials: true })
 
-      if (!response.ok) {
+      if (!response.authenticated) {
         router.push('/vendors/login')
         return
       }
 
-      const data = await response.json()
-      if (data.authenticated) {
-        setVendorData(data.vendor)
-      } else {
-        router.push('/vendors/login')
-      }
+      setVendorData(response.vendor)
     } catch (error) {
       console.error('Auth check failed:', error)
       router.push('/vendors/login')
@@ -86,10 +80,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:9000/vendors/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
+      await postToBackend('/vendors/auth/logout', { withCredentials: true })
       router.push('/vendors/login')
     } catch (error) {
       console.error('Logout failed:', error)
@@ -115,8 +106,6 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
       </div>
     )
   }
-
-  console.log(vendorData)
 
   return (
     <div className="flex h-screen bg-gray-50">

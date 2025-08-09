@@ -61,7 +61,7 @@ export class VendorAvailabilityChecker {
   /**
    * Get active special event (holiday, vacation, special event, or temporary closure)
    */
-  private getActiveSpecialEvent(date: Date): any {
+  getActiveSpecialEvent(date: Date): any {
     const dateString = date.toISOString().split('T')[0]
     const currentTime = date.getTime()
 
