@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Button,
   Text,
@@ -15,12 +16,14 @@ import {
   CheckCircle,
   XCircle,
   ArrowPath,
+  Eye,
 } from '@medusajs/icons'
 import { getFromBackend } from '@/utils/fetch'
 import { Spinner } from '@/components/Spinner'
 
 interface Order {
   id: string
+  display_id?: number
   status: string
   total: number
   subtotal: number
@@ -28,19 +31,38 @@ interface Order {
   tax_total: number
   created_at: string
   updated_at: string
-  customer: {
+  email?: string
+  customer?: {
     id: string
     email: string
-  }
+    first_name?: string
+    last_name?: string
+  } | null
   items: Array<{
     id: string
     title: string
     quantity: number
     unit_price: number
+    total: number
+    variant_id: string
+    product_id: string
+    variant?: {
+      id: string
+      title: string
+      product: {
+        id: string
+        title: string
+      }
+    } | null
   }>
+  vendor_item_count?: number
+  total_item_count?: number
+  fulfillments?: Array<any>
+  payment_collections?: Array<any>
 }
 
 export default function OrdersPage() {
+  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -49,15 +71,10 @@ export default function OrdersPage() {
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        console.log('🔍 Frontend - Loading orders...')
-        console.log('🔍 Frontend - Environment URL:', process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL)
-
-        const orders = await getFromBackend('/vendors/orders', { withCredentials: true })
-        console.log('🔍 Frontend - Orders response:', orders)
-
-        setOrders(orders.orders)
+        const response = await getFromBackend('/vendors/orders')
+        setOrders(response.orders || [])
       } catch (error) {
-        console.error('❌ Frontend - Failed to load orders:', error)
+        console.error('Failed to load orders:', error)
       } finally {
         setLoading(false)
       }
@@ -66,8 +83,10 @@ export default function OrdersPage() {
   }, [])
 
   const filteredOrders = orders.filter(order => {
+    const customerEmail = order.customer?.email || order.email || ''
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+      customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.display_id && order.display_id.toString().includes(searchTerm))
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -258,24 +277,44 @@ export default function OrdersPage() {
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => router.push(`/vendors/dashboard/orders/${order.id}`)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{order.id.slice(-8)}
+                      #{order.display_id || order.id.slice(-8)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.customer.email}
+                      {order.customer?.email || order.email || 'N/A'}
+                      {order.vendor_item_count && order.total_item_count && order.vendor_item_count < order.total_item_count && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {order.vendor_item_count} of {order.total_item_count} items
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${order.total.toFixed(2)}
+                      ${(order.total / 100).toFixed(2)}
+                      <div className="text-xs text-gray-500">
+                        Vendor portion
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Button variant="transparent" size="small">
+                      <Button
+                        variant="transparent"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation() // Prevent row click
+                          router.push(`/vendors/dashboard/orders/${order.id}`)
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
                         View Details
                       </Button>
                     </td>

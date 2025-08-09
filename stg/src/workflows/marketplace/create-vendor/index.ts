@@ -9,6 +9,7 @@ import {
 } from "@medusajs/medusa/core-flows"
 import createVendorAdminStep from "./steps/create-vendor-admin"
 import createVendorStep from "./steps/create-vendor"
+import { hashPassword } from "../../../utils/password"
 
 export type CreateVendorWorkflowInput = {
   name: string
@@ -16,8 +17,10 @@ export type CreateVendorWorkflowInput = {
   logo?: string
   admin: {
     email: string
+    password: string
     first_name?: string
     last_name?: string
+    phone?: string
   }
   authIdentityId?: string
 }
@@ -34,10 +37,16 @@ const createVendorWorkflow = createWorkflow(
     const vendorAdminData = transform({
       input,
       vendor,
-    }, (data) => {
+    }, async (data) => {
+      const passwordHash = await hashPassword(data.input.admin.password)
+
       return {
-        ...data.input.admin,
+        email: data.input.admin.email,
+        first_name: data.input.admin.first_name,
+        last_name: data.input.admin.last_name,
+        password_hash: passwordHash,
         vendor_id: data.vendor.id,
+        phone: data.input.admin.phone,
       }
     })
 

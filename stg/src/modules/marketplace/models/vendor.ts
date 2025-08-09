@@ -14,6 +14,9 @@ const Vendor = model.define("vendor", {
   address: model.json().nullable(),
   social_links: model.json().nullable(),
   phone: model.text().nullable(),
+  stripe_account_id: model.text().nullable(),
+  stripe_account_status: model.text().nullable(),
+  stripe_connected: model.boolean().default(false),
 })
 
 export default Vendor

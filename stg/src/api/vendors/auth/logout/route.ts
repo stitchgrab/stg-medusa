@@ -1,42 +1,32 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../../utils/cors"
 
 export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const POST = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return res.status(200).end()
-  }
+  // Set CORS headers for all requests
+  setVendorCorsHeaders(res)
 
   try {
     // Clear the vendor session cookie
     res.cookie("vendor_session", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 0, // Expire immediately
+      path: "/",
     })
 
     res.json({
-      message: "Logout successful",
+      message: "Logged out successfully",
     })
   } catch (error) {
     console.error("Vendor logout error:", error)

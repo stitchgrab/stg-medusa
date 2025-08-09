@@ -1,78 +1,20 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { createVendorAvailabilityChecker } from "../../../utils/vendor-availability"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../utils/cors"
+import { getCurrentVendor, getCurrentVendorAdmin } from "../../../utils/vendor-auth"
+import createVendorProductWorkflow from "../../../workflows/marketplace/create-vendor-product"
 
 export const OPTIONS = async (req: MedusaRequest, res: MedusaResponse) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
+  setVendorCorsHeaders(res)
 
   try {
     // Parse session from cookie
-    const cookies = req.headers.cookie
-    if (!cookies) {
-      return res.status(401).json({ error: "No session cookie found" })
-    }
-
-    const cookiePairs = cookies.split(';').map(pair => pair.trim().split('='))
-    const cookieMap = Object.fromEntries(cookiePairs)
-    const sessionToken = cookieMap.vendor_session
-
-    if (!sessionToken) {
-      return res.status(401).json({ error: "No vendor session found" })
-    }
-
-    // Extract vendor admin ID from session token
-    const vendorAdminId = sessionToken.split('_')[1]
-    console.log("🔍 Products endpoint - Vendor admin ID:", vendorAdminId)
-
+    const vendor = await getCurrentVendor(req)
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-
-    // Get vendor admin
-    const { data: vendorAdmins } = await query.graph({
-      entity: "vendor_admin",
-      fields: [
-        "id",
-        "email",
-        "vendor.id",
-        "vendor.name",
-        "vendor.handle",
-        "vendor.businessHours",
-        "vendor.specialHours",
-      ],
-      filters: {
-        id: [vendorAdminId],
-      },
-    })
-
-    if (!vendorAdmins.length) {
-      return res.status(401).json({ error: "Vendor admin not found" })
-    }
-
-    const vendorAdmin = vendorAdmins[0]
-    const vendor = vendorAdmin.vendor
-    console.log("🔍 Products endpoint - Vendor:", vendor.id, vendor.name)
-
-    // Get vendor's business hours and special hours for availability checking
-    const businessHours = vendor.businessHours || {}
-    const specialHours = vendor.specialHours || {}
-
-    const availabilityChecker = createVendorAvailabilityChecker(businessHours, specialHours)
-
-    const shouldHideProducts = availabilityChecker.shouldHideProducts()
-    const bannerInfo = availabilityChecker.getBannerInfo()
-    const statusMessage = availabilityChecker.getStatusMessage()
 
     // Get products associated with this vendor using the link system
     // First get all product-vendor links for this vendor
@@ -96,90 +38,248 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       },
     })
 
-    console.log("🔍 Products endpoint - Found products:", vendorProducts.length)
-
-    // Filter products based on availability settings
-    const filteredProducts = shouldHideProducts ? [] : vendorProducts
-
     return res.json({
-      products: filteredProducts,
-      vendor_status: {
-        should_hide_products: shouldHideProducts,
-        banner_info: bannerInfo,
-        status_message: statusMessage
-      }
+      products: vendorProducts,
     })
 
   } catch (error) {
+    if (error instanceof Error && error.message === "No session found") {
+      return res.status(401).json({
+        message: "No session found",
+        authenticated: false,
+      })
+    }
+
+    if (error instanceof Error && error.message === "Invalid or expired session") {
+      return res.status(401).json({
+        message: "Invalid or expired session",
+        authenticated: false,
+      })
+    }
+
     console.error("🔍 Products endpoint - Error:", error)
     return res.status(500).json({ error: "Internal server error" })
   }
 }
 
+/**
+ * Create a new product for the authenticated vendor
+ * 
+ * Example usage:
+ * 
+ * Basic product:
+ * POST /vendors/products
+ * {
+ *   "title": "My Product",
+ *   "description": "Product description",
+ *   "status": "draft"
+ * }
+ * 
+ * Advanced product with variants:
+ * POST /vendors/products
+ * {
+ *   "title": "T-Shirt",
+ *   "handle": "t-shirt",
+ *   "description": "Comfortable cotton t-shirt",
+ *   "status": "published",
+ *   "weight": 200,
+ *   "thumbnail": "https://example.com/image.jpg",
+ *   "options": [
+ *     {
+ *       "title": "Size",
+ *       "values": ["S", "M", "L", "XL"]
+ *     },
+ *     {
+ *       "title": "Color", 
+ *       "values": ["Red", "Blue", "Green"]
+ *     }
+ *   ],
+ *   "variants": [
+ *     {
+ *       "title": "S / Red",
+ *       "sku": "TSHIRT-S-RED",
+ *       "prices": [
+ *         {
+ *           "amount": 2500,
+ *           "currency_code": "usd"
+ *         }
+ *       ],
+ *       "options": {
+ *         "Size": "S",
+ *         "Color": "Red"
+ *       }
+ *     }
+ *   ],
+ *   "images": [
+ *     {
+ *       "url": "https://example.com/image1.jpg"
+ *     }
+ *   ],
+ *   "category_ids": ["cat_123"],
+ *   "tag_ids": ["tag_456"],
+ *   "metadata": {
+ *     "vendor_note": "Special product for summer"
+ *   }
+ * }
+ */
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
+  setVendorCorsHeaders(res)
 
   try {
     // Parse session from cookie
-    const cookies = req.headers.cookie
-    if (!cookies) {
-      return res.status(401).json({ error: "No session cookie found" })
+    const vendorAdmin = await getCurrentVendorAdmin(req)
+
+    /**
+     * Product creation fields based on createProductsWorkflow input
+     * @see https://docs.medusajs.com/resources/references/medusa-workflows/createProductsWorkflow
+     */
+    const {
+      // Required fields
+      title,
+      handle,
+
+      // Basic product info
+      description,
+      subtitle,
+      status = "draft",
+      is_giftcard = false,
+      thumbnail,
+
+      // Physical properties
+      width,
+      weight,
+      length,
+      height,
+      origin_country,
+      hs_code,
+      mid_code,
+      material,
+
+      // Categorization
+      collection_id,
+      type_id,
+      tag_ids = [],
+      category_ids = [],
+
+      // Settings
+      discountable = true,
+      metadata = {},
+
+      // Product structure
+      variants = [],
+      options = [],
+      images = [],
+
+      // External integration
+      external_id,
+
+      // Distribution
+      sales_channels = [{ id: "default" }],
+    } = req.body as any
+
+    // Basic validation
+    if (!title) {
+      return res.status(400).json({
+        error: "Title is required"
+      })
     }
 
-    const cookiePairs = cookies.split(';').map(pair => pair.trim().split('='))
-    const cookieMap = Object.fromEntries(cookiePairs)
-    const sessionToken = cookieMap.vendor_session
-
-    if (!sessionToken) {
-      return res.status(401).json({ error: "No vendor session found" })
+    // Validate status
+    const validStatuses = ["draft", "proposed", "published", "rejected"]
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`
+      })
     }
 
-    // Extract vendor admin ID from session token
-    const vendorAdminId = sessionToken.split('_')[1]
-    console.log("🔍 Products POST - Vendor admin ID:", vendorAdminId)
+    // Get the container to run the workflow
+    const container = req.scope
 
-    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-
-    // Get vendor admin
-    const { data: vendorAdmins } = await query.graph({
-      entity: "vendor_admin",
-      fields: [
-        "id",
-        "email",
-        "vendor.id",
-        "vendor.name",
-      ],
-      filters: {
-        id: [vendorAdminId],
+    // Create product using the vendor product workflow
+    const { result } = await createVendorProductWorkflow(container).run({
+      input: {
+        vendor_admin_id: vendorAdmin.id,
+        product: {
+          title: title || "New Product",
+          handle: handle || `new-product-${Date.now()}`,
+          description: description || "",
+          subtitle: subtitle,
+          status: status,
+          is_giftcard: is_giftcard,
+          thumbnail: thumbnail,
+          width: width,
+          weight: weight,
+          length: length,
+          height: height,
+          origin_country: origin_country,
+          hs_code: hs_code,
+          mid_code: mid_code,
+          material: material,
+          collection_id: collection_id,
+          type_id: type_id,
+          tag_ids: tag_ids,
+          category_ids: category_ids,
+          discountable: discountable,
+          metadata: metadata,
+          external_id: external_id,
+          // Variants
+          variants: variants.length > 0 ? variants : [
+            {
+              title: title || "Default Variant",
+              sku: `SKU-${Date.now()}`,
+              prices: [
+                {
+                  amount: 1000, // $10.00 in cents
+                  currency_code: "usd",
+                },
+              ],
+            },
+          ],
+          // Options
+          options: options.length > 0 ? options : [
+            {
+              title: "Size",
+              values: ["S", "M", "L", "XL"],
+            },
+          ],
+          // Images
+          images: images,
+          // Sales channels
+          sales_channels: sales_channels,
+        },
       },
     })
 
-    if (!vendorAdmins.length) {
-      return res.status(401).json({ error: "Vendor admin not found" })
-    }
+    console.log("🔍 Products POST - Created product:", {
+      id: result.product.id,
+      title: result.product.title,
+      handle: result.product.handle,
+      status: result.product.status,
+      variants_count: result.product.variants?.length || 0,
+      options_count: result.product.options?.length || 0,
+    })
 
-    const vendor = vendorAdmins[0].vendor
-    const { title, handle, description } = req.body as any
-
-    // Create new product (simplified for now)
-    const newProduct = {
-      id: `prod_${Date.now()}`,
-      title: title || "New Product",
-      handle: handle || `new-product-${Date.now()}`,
-      description: description || "",
-      status: "draft",
-      vendor_id: vendor.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    return res.json({ product: newProduct })
+    return res.json({
+      product: result.product,
+      message: "Product created successfully",
+      vendor_id: vendorAdmin.vendor?.id,
+    })
 
   } catch (error) {
+    if (error instanceof Error && error.message === "No session found") {
+      return res.status(401).json({
+        message: "No session found",
+        authenticated: false,
+      })
+    }
+
+    if (error instanceof Error && error.message === "Invalid or expired session") {
+      return res.status(401).json({
+        message: "Invalid or expired session",
+        authenticated: false,
+      })
+    }
+
     console.error("🔍 Products POST - Error:", error)
     return res.status(500).json({ error: "Internal server error" })
   }

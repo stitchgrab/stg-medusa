@@ -2,88 +2,26 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import MarketplaceModuleService from "../../../modules/marketplace/service"
 import { MARKETPLACE_MODULE } from "../../../modules/marketplace"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../utils/cors"
+import { getCurrentVendor, getCurrentVendorAdmin } from "../../../utils/vendor-auth"
 
 export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const GET = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  setVendorCorsHeaders(res)
 
   try {
-    // Access cookies from the request
-    const sessionToken = req.cookies?.vendor_session
-
-    if (!sessionToken) {
-      return res.status(401).json({
-        message: "No session found",
-        authenticated: false,
-      })
-    }
-
-    // Parse the session token to get vendor admin ID
-    const tokenParts = sessionToken.split("_")
-    if (tokenParts.length < 3 || tokenParts[0] !== "vendor") {
-      return res.status(401).json({
-        message: "Invalid session token",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdminId = tokenParts[1]
-
-    // Get vendor admin with vendor information
-    const { data: vendorAdmins } = await query.graph({
-      entity: "vendor_admin",
-      fields: [
-        "id",
-        "first_name",
-        "last_name",
-        "email",
-        "phone",
-        "created_at",
-        "updated_at",
-        "vendor.id",
-        "vendor.name",
-        "vendor.handle",
-        "vendor.logo",
-        "vendor.businessHours",
-        "vendor.specialHours",
-        "vendor.address",
-        "vendor.social_links",
-        "vendor.phone",
-      ],
-      filters: {
-        id: [vendorAdminId],
-      },
-    })
-
-    if (!vendorAdmins.length) {
-      return res.status(401).json({
-        message: "Vendor admin not found",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdmin = vendorAdmins[0]
+    // Get current vendor admin using JWT authentication
+    const vendorAdmin = await getCurrentVendorAdmin(req)
+    const vendor = await getCurrentVendor(req)
 
     res.json({
       vendor_admin: {
@@ -96,15 +34,15 @@ export const GET = async (
         updated_at: vendorAdmin.updated_at,
       },
       vendor: {
-        id: vendorAdmin.vendor.id,
-        name: vendorAdmin.vendor.name,
-        handle: vendorAdmin.vendor.handle,
-        logo: vendorAdmin.vendor.logo,
+        id: vendor.id,
+        name: vendor.name,
+        handle: vendor.handle,
+        logo: vendor.logo,
         businessHours: vendorAdmin.vendor.businessHours,
         specialHours: vendorAdmin.vendor.specialHours,
         address: vendorAdmin.vendor.address,
         social_links: vendorAdmin.vendor.social_links,
-        phone: vendorAdmin.vendor.phone,
+        phone: vendor.phone,
       },
     })
   } catch (error) {
@@ -149,25 +87,8 @@ export const PUT = async (
 
   try {
     // Access cookies from the request
-    const sessionToken = req.cookies?.vendor_session
-
-    if (!sessionToken) {
-      return res.status(401).json({
-        message: "No session found",
-        authenticated: false,
-      })
-    }
-
-    // Parse the session token to get vendor admin ID
-    const tokenParts = sessionToken.split("_")
-    if (tokenParts.length < 3 || tokenParts[0] !== "vendor") {
-      return res.status(401).json({
-        message: "Invalid session token",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdminId = tokenParts[1]
+    const sessionVendor = await getCurrentVendorAdmin(req)
+    const vendorAdminId = sessionVendor.id
     const { vendor_admin, vendor } = req.body
 
     console.log('Updating vendor profile:', { vendorAdminId, vendor_admin, vendor })

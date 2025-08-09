@@ -1,6 +1,9 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { z } from "zod"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../../utils/cors"
+import { signVendorToken } from "../../../../utils/jwt"
+import { verifyPassword } from "../../../../utils/password"
 
 export const PostVendorLoginSchema = z.object({
   email: z.string().email(),
@@ -13,11 +16,7 @@ export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const POST = async (
@@ -25,10 +24,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   // Set CORS headers for all requests
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
+  setVendorCorsHeaders(res)
 
   try {
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -47,7 +43,7 @@ export const POST = async (
     // Find vendor admin by email
     const { data: vendorAdmins } = await query.graph({
       entity: "vendor_admin",
-      fields: ["id", "email", "first_name", "last_name", "vendor.id", "vendor.name", "vendor.handle"],
+      fields: ["id", "email", "first_name", "last_name", "password_hash", "vendor.id", "vendor.name", "vendor.handle"],
       filters: {
         email: [email],
       },
@@ -65,21 +61,49 @@ export const POST = async (
 
     const vendorAdmin = vendorAdmins[0]
 
-    // In a real implementation, you would verify the password here
-    // For now, we'll accept any password for demonstration
-    // TODO: Implement proper password verification
+    // Verify password
+    if (!vendorAdmin.password_hash) {
+      console.log("No password hash found for vendor admin:", vendorAdmin.id)
+      return res.status(401).json({
+        message: "Invalid credentials",
+      })
+    }
 
-    // Create a session token (in a real implementation, use JWT)
-    const sessionToken = `vendor_${vendorAdmin.id}_${Date.now()}`
+    const isPasswordValid = await verifyPassword(password, vendorAdmin.password_hash)
+    if (!isPasswordValid) {
+      console.log("Invalid password for vendor admin:", vendorAdmin.id)
+      return res.status(401).json({
+        message: "Invalid credentials",
+      })
+    }
 
-    // Set session cookie
-    res.cookie("vendor_session", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      domain: "localhost", // Ensure cookie works across localhost ports
+    // Generate JWT token for vendor authentication
+    const jwtToken = signVendorToken({
+      vendor_admin_id: vendorAdmin.id,
+      vendor_id: vendorAdmin.vendor.id,
+      email: vendorAdmin.email,
+      type: 'vendor',
     })
+
+    // Set session cookie with JWT token (httpOnly for security)
+    res.cookie("vendor_session", jwtToken, {
+      httpOnly: true, // Secure - prevent XSS attacks
+      secure: true, // Required for HTTPS (ngrok)
+      sameSite: "none", // Back to none for cross-origin
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: "/", // Set for all paths
+    })
+
+    // Also set a non-httpOnly token for JavaScript access (fallback)
+    res.cookie("vendor_token", jwtToken, {
+      httpOnly: false, // Allow JavaScript access
+      secure: true, // Required for HTTPS (ngrok)
+      sameSite: "none", // Allow cross-origin
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: "/", // Set for all paths
+    })
+
+    console.log("🔍 Set both vendor_session (httpOnly) and vendor_token (JS accessible) cookies")
 
     res.json({
       vendor_admin: {
@@ -93,6 +117,7 @@ export const POST = async (
         name: vendorAdmin.vendor.name,
         handle: vendorAdmin.vendor.handle,
       },
+      token: jwtToken, // Include token for Authorization header fallback
       message: "Login successful",
     })
   } catch (error) {

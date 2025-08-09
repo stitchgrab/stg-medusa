@@ -1,16 +1,13 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { setVendorCorsHeaders, setVendorCorsHeadersOptions } from "../../../utils/cors"
+import { validateVendorSession } from "../../../utils/vendor-auth"
 
 export const OPTIONS = async (
   req: MedusaRequest,
   res: MedusaResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-  return res.status(200).end()
+  return setVendorCorsHeadersOptions(res)
 }
 
 export const GET = async (
@@ -18,104 +15,170 @@ export const GET = async (
   res: MedusaResponse
 ) => {
   // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3001")
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Max-Age", "86400")
-
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  setVendorCorsHeaders(res)
 
   try {
-    // Access cookies from the request
-    const sessionToken = req.cookies?.vendor_session
+    const payload = await validateVendorSession(req)
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const vendorId = payload.vendor_id
 
-    if (!sessionToken) {
-      return res.status(401).json({
-        message: "No session found",
-        authenticated: false,
-      })
-    }
-
-    // Parse the session token to get vendor admin ID
-    const tokenParts = sessionToken.split("_")
-    if (tokenParts.length < 3 || tokenParts[0] !== "vendor") {
-      return res.status(401).json({
-        message: "Invalid session token",
-        authenticated: false,
-      })
-    }
-
-    const vendorAdminId = tokenParts[1]
-
-    // Find vendor admin by ID
-    const { data: vendorAdmins } = await query.graph({
-      entity: "vendor_admin",
-      fields: ["id", "email", "first_name", "last_name", "vendor.id", "vendor.name", "vendor.handle", "vendor.products.*"],
+    // Get vendor's products
+    const { data: vendorProductLinks } = await query.graph({
+      entity: "product_vendor",
+      fields: ["id", "vendor_id"],
       filters: {
-        id: [vendorAdminId],
+        vendor_id: [vendorId],
+      },
+    })
+    const { data: vendorProducts } = await query.graph({
+      entity: "product",
+      fields: ["id", "title", "handle", "status", "thumbnail", "images.*"],
+      filters: {
+        id: vendorProductLinks.map((link: any) => link.id),
       },
     })
 
-    if (!vendorAdmins.length) {
-      return res.status(401).json({
-        message: "Vendor admin not found",
-        authenticated: false,
+    // Filter products by vendor manually since the filter syntax is complex
+    const vendorProductsFiltered = vendorProducts.filter((product: any) => vendorProductLinks.some((link: any) => link.id === product.id))
+
+    if (!vendorProductsFiltered.length) {
+      return res.status(200).json({
+        inventory: [],
+        message: "No products found for this vendor",
       })
     }
 
-    const vendorAdmin = vendorAdmins[0]
+    const productIds = vendorProductsFiltered.map((product: any) => product.id)
 
-    // Get inventory items for this vendor's products using direct query
+    // Get product variants for vendor's products
+    const { data: productVariants } = await query.graph({
+      entity: "product_variant",
+      fields: [
+        "id",
+        "title",
+        "sku",
+        "barcode",
+        "ean",
+        "upc",
+        "product.id",
+        "product.title",
+        "product.handle",
+        "product.status",
+        "product.thumbnail",
+        "product.images.*"
+      ],
+    })
+
+    // Filter variants by vendor's products
+    const vendorVariants = productVariants.filter((variant: any) =>
+      productIds.includes(variant.product?.id)
+    )
+
+    // Get inventory items linked to these variants
+    const variantIds = vendorVariants.map((variant: any) => variant.id)
+
+    const { data: variantInventoryLinks } = await query.graph({
+      entity: "product_variant_inventory_item",
+      fields: [
+        "id",
+        "variant_id",
+        "inventory_item_id",
+        "required_quantity"
+      ],
+    })
+
+    // Filter links by vendor's variants
+    const vendorInventoryLinks = variantInventoryLinks.filter((link: any) =>
+      variantIds.includes(link.variant_id)
+    )
+
+    // Get inventory items
+    const inventoryItemIds = vendorInventoryLinks.map((link: any) => link.inventory_item_id)
+
     const { data: inventoryItems } = await query.graph({
       entity: "inventory_item",
       fields: [
         "id",
         "sku",
         "created_at",
-        "updated_at",
+        "updated_at"
       ],
     })
 
-    // Filter to only include items for vendor products
-    const vendorInventory = inventoryItems
-      .filter(item => {
-        // For now, we'll include all inventory items
-        // In a real implementation, you'd filter by product association
-        return true
-      })
-      .map((item, index) => {
-        // Mock quantities for now since the actual fields aren't available
-        const quantity = 100 - (index * 10)
-        const reservedQuantity = Math.floor(Math.random() * 10)
-        const availableQuantity = quantity - reservedQuantity
+    // Filter inventory items by vendor's inventory items
+    const vendorInventoryItems = inventoryItems.filter((item: any) =>
+      inventoryItemIds.includes(item.id)
+    )
 
-        let status = 'in_stock'
-        if (quantity === 0) {
-          status = 'out_of_stock'
-        } else if (availableQuantity <= 10) {
-          status = 'low_stock'
-        }
+    // Get inventory levels for these items
+    const { data: inventoryLevels } = await query.graph({
+      entity: "inventory_level",
+      fields: [
+        "id",
+        "inventory_item_id",
+        "location_id",
+        "stocked_quantity",
+        "reserved_quantity",
+        "available_quantity",
+      ],
+    })
+
+    // Filter inventory levels by vendor's inventory items
+    const vendorInventoryLevels = inventoryLevels.filter((level: any) =>
+      inventoryItemIds.includes(level.inventory_item_id)
+    )
+
+    // Combine everything into a comprehensive inventory view
+    const inventoryWithLevels = vendorVariants.map((variant: any) => {
+      // Find inventory links for this variant
+      const variantLinks = vendorInventoryLinks.filter((link: any) => link.variant_id === variant.id)
+
+      // Get inventory items for this variant
+      const variantInventoryItems = variantLinks.map((link: any) => {
+        const inventoryItem = vendorInventoryItems.find((item: any) => item.id === link.inventory_item_id)
+        const levels = vendorInventoryLevels.filter((level: any) => level.inventory_item_id === link.inventory_item_id)
 
         return {
-          id: item.id,
-          product_title: `Product ${item.sku}`,
-          sku: item.sku,
-          quantity: quantity,
-          reserved_quantity: reservedQuantity,
-          available_quantity: availableQuantity,
-          location: 'Default Location',
-          status: status,
-          last_updated: item.updated_at,
+          ...inventoryItem,
+          required_quantity: link.required_quantity,
+          inventory_levels: levels,
+          total_stocked: levels.reduce((sum: number, level: any) => sum + level.stocked_quantity, 0),
+          total_reserved: levels.reduce((sum: number, level: any) => sum + level.reserved_quantity, 0),
+          total_available: levels.reduce((sum: number, level: any) => sum + level.available_quantity, 0),
         }
       })
 
+      return {
+        ...variant,
+        inventory_items: variantInventoryItems,
+        total_stocked: variantInventoryItems.reduce((sum: number, item: any) => sum + item.total_stocked, 0),
+        total_reserved: variantInventoryItems.reduce((sum: number, item: any) => sum + item.total_reserved, 0),
+        total_available: variantInventoryItems.reduce((sum: number, item: any) => sum + item.total_available, 0),
+      }
+    })
+
     res.json({
-      inventory: vendorInventory,
+      inventory: inventoryWithLevels,
+      total_variants: inventoryWithLevels.length,
+      total_products: vendorProducts.length,
     })
   } catch (error) {
+    if (error instanceof Error && error.message === "No session found") {
+      return res.status(401).json({
+        message: "No session found",
+        authenticated: false,
+      })
+    }
+
+    if (error instanceof Error && error.message === "Invalid or expired session") {
+      return res.status(401).json({
+        message: "Invalid or expired session",
+        authenticated: false,
+      })
+    }
+
     console.error("Vendor inventory error:", error)
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
       error: error.message,
     })
