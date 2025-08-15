@@ -1,0 +1,82 @@
+/* Authentication Page Styles */
+
+.auth-container {
+  min-height: 50vh;
+}
+
+.auth-card {
+  max-width: 500px;
+  width: 100%;
+}
+
+.auth-heading {
+  font-family: 'Outfit', sans-serif;
+  font-style: Light;
+  font-size: clamp(24px, 5vw, 40px);
+  line-height: 100%;
+  letter-spacing: -2.63px;
+  vertical-align: middle;
+}
+
+.auth-heading-brand {
+  font-weight: 500;
+}
+
+.auth-subtitle {
+  font-size: clamp(14px, 3vw, 16px);
+}
+
+.social-button {
+  border-color: #A4A2AE;
+  padding-left: 2.5rem;
+  height: 48px;
+}
+
+.social-icon-container {
+  position: absolute;
+  left: 0;
+  padding-left: 1rem;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.terms-text {
+  padding-top: 10px;
+  color: #403A38;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  font-size: clamp(8px, 2vw, 10px);
+  line-height: 100%;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.account-text {
+  font-family: 'Outfit', sans-serif;
+  font-style: Light;
+  font-weight: 200;
+  font-size: clamp(14px, 3vw, 18px);
+  line-height: 100%;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.auth-link {
+  color: #000;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  color: #000;
+  text-decoration: none;
+}
+
+.required-asterisk {
+  color: red;
+} 
+
+.custom-separator {
+  border-top: 1px solid #000;
+  min-width: 0;
+}
