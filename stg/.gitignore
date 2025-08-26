@@ -25,3 +25,7 @@ build
 !.yarn/versions
 
 .medusa
+
+# Files generated while running npm install
+package-lock.json
+yarn.lock
