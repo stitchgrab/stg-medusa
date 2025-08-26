@@ -1,2 +1,2 @@
-web: npm start
-worker: npm run worker
+web: cd .medusa/server && npm install && npm run predeploy && npm start
+worker: cd .medusa/server && npm install && npm run worker
