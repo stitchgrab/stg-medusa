@@ -101,6 +101,10 @@ export const POST = async (
         url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/vendors/${vendor.id}`,
         product_description: `${vendor.name} - Vendor on your platform`,
       },
+      metadata: {
+        stitchgrab_role: "vendor",
+        vendor_id: vendor.id,
+      },
     })
 
     // Create account link for onboarding

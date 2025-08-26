@@ -20,7 +20,7 @@ export const POST = async (
   const eventBus = req.scope.resolve("event_bus")
 
   const sig = req.headers["stripe-signature"] as string
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
+  const endpointSecret = process.env.VENDORSSTRIPE_WEBHOOK_SECRET!
 
   let event: Stripe.Event
 

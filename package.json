@@ -1,0 +1,18 @@
+{
+  "name": "stitchgrab-unified",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:storefront": "cd stg-storefront && npm install && npm run build",
+    "build:drivers": "cd stg-drivers && npm install && npm run build",
+    "build:vendors": "cd stg-vendors && npm install && npm run build",
+    "build:backend": "cd stg && npm install && npm run build",
+    "build:all": "npm run build:storefront && npm run build:drivers && npm run build:vendors && npm run build:backend",
+    "start:backend": "cd stg && npm start",
+    "start:frontend": "cd stg-frontend && npm start",
+    "postinstall": "npm run build:all"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

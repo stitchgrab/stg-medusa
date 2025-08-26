@@ -44,5 +44,12 @@ export default defineMiddlewares({
         preserveRawBody: true,
       },
     },
+    {
+      matcher: "/drivers/stripe/webhook",
+      method: ["POST"],
+      bodyParser: {
+        preserveRawBody: true,
+      },
+    },
   ],
 })

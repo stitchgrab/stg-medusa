@@ -1,5 +1,6 @@
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils'
 import { MARKETPLACE_MODULE } from './src/modules/marketplace'
+import { TYPEFORM_MODULE } from './src/modules/typeform'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -32,6 +33,9 @@ module.exports = defineConfig({
     },
     {
       resolve: "./src/modules/marketplace",
+    },
+    {
+      resolve: "./src/modules/typeform",
     }
   ],
 })
