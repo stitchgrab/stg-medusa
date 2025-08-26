@@ -59,8 +59,8 @@ heroku config:set STRIPE_API_KEY=your_stripe_secret_key --app stitchgrab-staging
 heroku config:set DRIVERS_STRIPE_WEBHOOK_SECRET=your_webhook_secret --app stitchgrab-staging
 heroku config:set VENDORS_STRIPE_WEBHOOK_SECRET=your_webhook_secret --app stitchgrab-staging
 heroku config:set STORE_CORS=https://stitchgrab-staging-bec4050caec5.herokuapp.com --app stitchgrab-staging
-heroku config:set ADMIN_CORS=https://stitchgrab-staging-bec4050caec5.herokuapp.com --app stitchgrab-staging
-heroku config:set AUTH_CORS=https://stitchgrab-staging-bec4050caec5.herokuapp.com --app stitchgrab-staging
+heroku config:set ADMIN_CORS=https://stitchgrab-staging-bec4050caec5.herokuapp.com/admin --app stitchgrab-staging
+heroku config:set AUTH_CORS=https://stitchgrab-staging-bec4050caec5.herokuapp.com,https://stitchgrab-staging-bec4050caec5.herokuapp.com/admin,https://stitchgrab-staging-bec4050caec5.herokuapp.com/vendors,https://stitchgrab-staging-bec4050caec5.herokuapp.com/drivers --app stitchgrab-staging
 
 # Frontend (stitchgrab-staging)
 heroku config:set NODE_ENV=production --app stitchgrab-staging
@@ -88,8 +88,8 @@ heroku config:set NEXT_PUBLIC_MEDUSA_BACKEND_URL=https://stitchgrab.com --app st
 heroku config:set NEXT_PUBLIC_STRIPE_KEY=pk_live_... --app stitchgrab
 heroku config:set NEXT_PUBLIC_BASE_URL=https://stitchgrab.com --app stitchgrab
 ```
-
 #### Add any other environment variables as needed
+
 
 ### 5. Set Up GitHub Integration
 
