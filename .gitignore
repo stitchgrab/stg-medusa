@@ -1,2 +1,5 @@
 .vscode/
-ngrok.yml 
+ngrok.yml
+cookies.txt
+.vscode/launch.json
+stg/package-lock.json

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Button, Text, Heading, Badge, DropdownMenu } from '@medusajs/ui'
+import { Button, Text, Heading, Badge, DropdownMenu, Spinner } from '@medusajs/ui'
 import {
   User,
   CreditCard,
@@ -98,8 +98,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Text>Loading...</Text>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }

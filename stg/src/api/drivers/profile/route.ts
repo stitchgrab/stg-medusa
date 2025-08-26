@@ -2,6 +2,8 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { setDriverCorsHeaders, setDriverCorsHeadersOptions } from "../../../utils/cors"
 import { getCurrentDriver } from "../../../utils/driver-auth"
+import { updateDriverWorkflow } from "../../../workflows/marketplace/update-driver"
+import { UpdateDriverStepInput } from "../../../workflows/marketplace/update-driver/steps/update-driver"
 
 export const OPTIONS = async (
   req: MedusaRequest,
@@ -24,21 +26,7 @@ export const GET = async (
     const { data: drivers } = await query.graph({
       entity: "driver",
       fields: [
-        "id",
-        "name",
-        "handle",
-        "avatar",
-        "vehicle_info",
-        "license_number",
-        "phone",
-        "email",
-        "address",
-        "status",
-        "rating",
-        "total_deliveries",
-        "stripe_account_id",
-        "stripe_account_status",
-        "stripe_connected",
+        "*"
       ],
       filters: {
         id: [driver.id],
@@ -70,7 +58,6 @@ export const PUT = async (
 
   try {
     const driver = await getCurrentDriver(req)
-    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
     const {
       name,
@@ -80,43 +67,31 @@ export const PUT = async (
       license_number,
       phone,
       email,
+      first_name,
+      last_name,
       address,
-    } = req.body
+      status,
+    } = req.body as UpdateDriverStepInput
 
-    // Update driver profile
-    const { data: updatedDriver } = await query.graph({
-      entity: "driver",
-      fields: [
-        "id",
-        "name",
-        "handle",
-        "avatar",
-        "vehicle_info",
-        "license_number",
-        "phone",
-        "email",
-        "address",
-        "status",
-        "rating",
-        "total_deliveries",
-      ],
-      filters: {
-        id: [driver.id],
+    // Use update driver workflow
+    const { result: updatedDriver } = await updateDriverWorkflow(req.scope).run({
+      input: {
+        id: driver.id,
+        name,
+        handle,
+        avatar,
+        vehicle_info,
+        license_number,
+        phone,
+        email,
+        first_name,
+        last_name,
+        address,
+        status,
       },
-    }).update({
-      name: name || driver.name,
-      handle: handle || driver.handle,
-      avatar: avatar || driver.avatar,
-      vehicle_info: vehicle_info || driver.vehicle_info,
-      license_number: license_number || driver.license_number,
-      phone: phone || driver.phone,
-      email: email || driver.email,
-      address: address || driver.address,
     })
 
-    res.json({
-      driver: updatedDriver[0],
-    })
+    res.json({ driver: { ...updatedDriver[0] } })
   } catch (error) {
     console.error("Error updating driver profile:", error)
     res.status(500).json({

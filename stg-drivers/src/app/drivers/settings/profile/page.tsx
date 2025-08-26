@@ -4,57 +4,140 @@ import { useState, useEffect } from 'react'
 import { Button, Text, Heading, Input, Label } from '@medusajs/ui'
 import { User } from '@medusajs/icons'
 
-interface Driver {
-  id: string
-  name: string
-  handle: string
-  avatar?: string
-  vehicle_info?: any
-  license_number?: string
-  phone?: string
-  email?: string
-  first_name?: string
-  last_name?: string
-  address?: any
-  status: string
-  rating?: number
-  total_deliveries: number
+interface Address {
+  area: string
+  city: string
+  country: string
+  postal_code: string
+  state: string
+  street: string
 }
 
-interface ProfileData {
-  driver: Driver
+interface VehicleInfo {
+  details: string
+  make: string
+  model: string
+  plate: string
+  type: string
+  year: string
+}
+
+interface Driver {
+  id: string
+  address: Address
+  application_date: string
+  approved_by: string | null
+  approved_date: string | null
+  area: string
+  available_weekends: boolean
+  avatar: string
+  can_lift_packages: boolean
+  comfortable_with_gps: boolean
+  created_at: string
+  criminal_record: string
+  current_work_status: string | null
+  deleted_at: string | null
+  email: string
+  experience_years: string | null
+  first_name: string
+  full_name: string
+  handle: string
+  has_cell_phone: string
+  has_reliable_vehicle: boolean
+  last_name: string
+  license_number: string
+  onfleet_worker_id: string | null
+  password_hash: string
+  phone_number: string
+  preferred_hours: string
+  privacy_agreement: boolean
+  profile_photo: string
+  rating: number | null
+  status: string
+  stripe_account_id: string | null
+  stripe_account_status: string | null
+  stripe_connected: boolean
+  total_deliveries: number
+  updated_at: string
+  vehicle_info: VehicleInfo
+  vehicle_type: string
 }
 
 export default function ProfilePage() {
-  const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [profileData, setProfileData] = useState<Driver | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const id = (e.target.attributes as any)['id'].value
+    const { value } = e.target
+
+    if (id === 'city' || id === 'state' || id === 'postal_code' || id === 'country' || id === 'street') {
+      setDriver(prev => ({ ...prev, address: { ...prev.address, [id]: value } }))
+      return
+    }
+
+    setDriver(prev => ({ ...prev, [id]: value }))
+  }
 
   // Form state
   const [driver, setDriver] = useState({
-    name: '',
-    handle: '',
+    id: '',
+    address: {
+      area: '',
+      city: '',
+      country: '',
+      postal_code: '',
+      state: '',
+      street: '',
+    },
+    application_date: '',
+    approved_by: null,
+    approved_date: null,
+    area: '',
+    available_weekends: false,
     avatar: '',
-    phone: '',
+    can_lift_packages: false,
+    comfortable_with_gps: false,
+    created_at: '',
+    criminal_record: '',
+    current_work_status: null,
+    deleted_at: null,
     email: '',
+    experience_years: null,
     first_name: '',
+    full_name: '',
+    handle: '',
+    has_cell_phone: '',
+    has_reliable_vehicle: false,
     last_name: '',
     license_number: '',
+    onfleet_worker_id: null,
+    password_hash: '',
+    phone_number: '',
+    preferred_hours: '',
+    privacy_agreement: false,
+    profile_photo: '',
+    rating: null,
+    status: '',
+    stripe_account_id: null,
+    stripe_account_status: null,
+    stripe_connected: false,
+    total_deliveries: 0,
+    updated_at: '',
     vehicle_info: {
+      details: '',
       make: '',
       model: '',
-      year: '',
       plate: '',
+      type: '',
+      year: '',
     },
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      postal_code: '',
-      country: '',
-    },
+    vehicle_type: '',
   })
 
   useEffect(() => {
@@ -69,32 +152,13 @@ export default function ProfilePage() {
         }
 
         const data = await response.json()
-        setProfileData(data)
+        setProfileData(data.driver)
 
         // Set form data
-        setDriver({
-          name: data.driver?.name || '',
-          handle: data.driver?.handle || '',
-          avatar: data.driver?.avatar || '',
-          phone: data.driver?.phone || '',
-          email: data.driver?.email || '',
-          first_name: data.driver?.first_name || '',
-          last_name: data.driver?.last_name || '',
-          license_number: data.driver?.license_number || '',
-          vehicle_info: {
-            make: data.driver?.vehicle_info?.make || '',
-            model: data.driver?.vehicle_info?.model || '',
-            year: data.driver?.vehicle_info?.year || '',
-            plate: data.driver?.vehicle_info?.plate || '',
-          },
-          address: {
-            street: data.driver?.address?.street || '',
-            city: data.driver?.address?.city || '',
-            state: data.driver?.address?.state || '',
-            postal_code: data.driver?.address?.postal_code || '',
-            country: data.driver?.address?.country || '',
-          },
-        })
+        setDriver(data.driver)
+
+        // Mark as initialized after data is loaded
+        setIsInitialized(true)
       } catch (error) {
         console.error('Failed to load profile:', error)
         setError('Failed to load profile information')
@@ -105,6 +169,15 @@ export default function ProfilePage() {
 
     loadProfile()
   }, [])
+
+  useEffect(() => {
+    if (profileData && driver && isInitialized) {
+      const fieldChanges = Object.entries(driver).every(([key, value]) => {
+        return profileData[key as keyof Driver] === value
+      })
+      setHasChanges(!fieldChanges)
+    }
+  }, [profileData, driver, isInitialized])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,7 +193,7 @@ export default function ProfilePage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          driver: driver,
+          ...driver,
         }),
       })
 
@@ -129,7 +202,9 @@ export default function ProfilePage() {
       }
 
       const data = await response.json()
-      setProfileData(data)
+      setProfileData(data.driver)
+      setDriver(data.driver)
+      setHasChanges(false)
       setSuccess('Profile updated successfully!')
     } catch (error) {
       console.error('Failed to update profile:', error)
@@ -141,8 +216,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Text>Loading profile...</Text>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -179,7 +254,7 @@ export default function ProfilePage() {
               <Input
                 id="first_name"
                 value={driver.first_name}
-                onChange={(e) => setDriver(prev => ({ ...prev, first_name: e.target.value }))}
+                onChange={handleChange}
                 placeholder="Enter your first name"
               />
             </div>
@@ -189,7 +264,7 @@ export default function ProfilePage() {
               <Input
                 id="last_name"
                 value={driver.last_name}
-                onChange={(e) => setDriver(prev => ({ ...prev, last_name: e.target.value }))}
+                onChange={handleChange}
                 placeholder="Enter your last name"
               />
             </div>
@@ -200,18 +275,18 @@ export default function ProfilePage() {
                 id="email"
                 type="email"
                 value={driver.email}
-                onChange={(e) => setDriver(prev => ({ ...prev, email: e.target.value }))}
+                onChange={handleChange}
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone_number">Phone</Label>
               <Input
-                id="phone"
+                id="phone_number"
                 type="tel"
-                value={driver.phone}
-                onChange={(e) => setDriver(prev => ({ ...prev, phone: e.target.value }))}
+                value={driver.phone_number}
+                onChange={handleChange}
                 placeholder="Enter your phone number"
               />
             </div>
@@ -226,44 +301,12 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="driver_name">Driver Name</Label>
-              <Input
-                id="driver_name"
-                value={driver.name}
-                onChange={(e) => setDriver(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter your driver name"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="handle">Driver Handle</Label>
               <Input
                 id="handle"
                 value={driver.handle}
-                onChange={(e) => setDriver(prev => ({ ...prev, handle: e.target.value }))}
-                placeholder="Enter your driver handle"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="driver_phone">Driver Phone</Label>
-              <Input
-                id="driver_phone"
-                type="tel"
-                value={driver.phone}
-                onChange={(e) => setDriver(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="Enter your driver phone"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="driver_email">Driver Email</Label>
-              <Input
-                id="driver_email"
-                type="email"
-                value={driver.email}
-                onChange={(e) => setDriver(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter your driver email"
+                disabled
+                placeholder="Driver handle (read-only)"
               />
             </div>
 
@@ -272,19 +315,19 @@ export default function ProfilePage() {
               <Input
                 id="license_number"
                 value={driver.license_number}
-                onChange={(e) => setDriver(prev => ({ ...prev, license_number: e.target.value }))}
+                onChange={handleChange}
                 placeholder="Enter your driver license number"
               />
             </div>
 
             <div>
-              <Label htmlFor="avatar">Avatar URL</Label>
+              <Label htmlFor="avatar">Driver Profile Picture</Label>
               <Input
                 id="avatar"
                 type="url"
                 value={driver.avatar}
-                onChange={(e) => setDriver(prev => ({ ...prev, avatar: e.target.value }))}
-                placeholder="Enter your avatar URL"
+                onChange={handleChange}
+                placeholder="Enter your profile picture URL"
               />
             </div>
           </div>
@@ -302,10 +345,7 @@ export default function ProfilePage() {
               <Input
                 id="vehicle_make"
                 value={driver.vehicle_info.make}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  vehicle_info: { ...prev.vehicle_info, make: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="e.g., Toyota"
               />
             </div>
@@ -315,10 +355,7 @@ export default function ProfilePage() {
               <Input
                 id="vehicle_model"
                 value={driver.vehicle_info.model}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  vehicle_info: { ...prev.vehicle_info, model: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="e.g., Camry"
               />
             </div>
@@ -328,10 +365,7 @@ export default function ProfilePage() {
               <Input
                 id="vehicle_year"
                 value={driver.vehicle_info.year}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  vehicle_info: { ...prev.vehicle_info, year: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="e.g., 2020"
               />
             </div>
@@ -341,10 +375,7 @@ export default function ProfilePage() {
               <Input
                 id="vehicle_plate"
                 value={driver.vehicle_info.plate}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  vehicle_info: { ...prev.vehicle_info, plate: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter license plate"
               />
             </div>
@@ -363,10 +394,7 @@ export default function ProfilePage() {
               <Input
                 id="street"
                 value={driver.address.street}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  address: { ...prev.address, street: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter street address"
               />
             </div>
@@ -376,10 +404,7 @@ export default function ProfilePage() {
               <Input
                 id="city"
                 value={driver.address.city}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  address: { ...prev.address, city: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter city"
               />
             </div>
@@ -389,10 +414,7 @@ export default function ProfilePage() {
               <Input
                 id="state"
                 value={driver.address.state}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  address: { ...prev.address, state: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter state"
               />
             </div>
@@ -402,10 +424,7 @@ export default function ProfilePage() {
               <Input
                 id="postal_code"
                 value={driver.address.postal_code}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  address: { ...prev.address, postal_code: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter postal code"
               />
             </div>
@@ -415,10 +434,7 @@ export default function ProfilePage() {
               <Input
                 id="country"
                 value={driver.address.country}
-                onChange={(e) => setDriver(prev => ({
-                  ...prev,
-                  address: { ...prev.address, country: e.target.value }
-                }))}
+                onChange={handleChange}
                 placeholder="Enter country"
               />
             </div>
@@ -427,7 +443,7 @@ export default function ProfilePage() {
 
         {/* Submit Button */}
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || !hasChanges}>
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
