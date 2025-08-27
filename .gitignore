@@ -3,3 +3,5 @@ ngrok.yml
 cookies.txt
 .vscode/launch.json
 stg/package-lock.json
+stg-vendors/package-lock.json
+stg-storefront/package-lock.json
