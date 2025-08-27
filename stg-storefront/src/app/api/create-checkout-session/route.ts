@@ -2,9 +2,18 @@ import { retrieveCart } from '@lib/data/cart'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = Stripe(process.env.NEXT_SECRET_STRIPE_KEY!)
-
 export async function POST(request: NextRequest) {
+  // Check for required environment variable
+  if (!process.env.NEXT_SECRET_STRIPE_KEY) {
+    console.error('NEXT_SECRET_STRIPE_KEY is not set')
+    return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 })
+  }
+
+  // Initialize Stripe client inside the function to avoid build-time issues
+  const stripe = new Stripe(process.env.NEXT_SECRET_STRIPE_KEY, {
+    apiVersion: '2025-06-30.basil',
+  })
+
   const { successUrl, cancelUrl, cartId } = await request.json()
 
   const cart = await retrieveCart(cartId)

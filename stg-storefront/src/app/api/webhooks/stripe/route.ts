@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
 export async function POST(request: NextRequest) {
+  // Check for required environment variables
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error('STRIPE_SECRET_KEY is not set')
+    return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 })
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set')
+    return NextResponse.json({ error: 'Stripe webhook configuration error' }, { status: 500 })
+  }
+
+  if (!process.env.MEDUSA_BACKEND_URL) {
+    console.error('MEDUSA_BACKEND_URL is not set')
+    return NextResponse.json({ error: 'Medusa backend configuration error' }, { status: 500 })
+  }
+
+  // Initialize Stripe client inside the function to avoid build-time issues
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-06-30.basil',
+  })
+
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')
 
@@ -35,7 +52,7 @@ export async function POST(request: NextRequest) {
       try {
         // Update the order in Medusa backend
         const cartId = session.metadata?.cartId
-        if (cartId) {
+        if (cartId && process.env.MEDUSA_BACKEND_URL) {
           // Call Medusa API to complete the order
           const medusaResponse = await fetch(`${process.env.MEDUSA_BACKEND_URL}/store/carts/${cartId}/complete`, {
             method: 'POST',

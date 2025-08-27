@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadStripe } from '@stripe/stripe-js'
 
-const stripe = loadStripe(process.env.NEXT_SECRET_STRIPE_KEY!)
-
 export async function GET(request: NextRequest) {
+  // Check for required environment variable
+  if (!process.env.NEXT_SECRET_STRIPE_KEY) {
+    console.error('NEXT_SECRET_STRIPE_KEY is not set')
+    return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 })
+  }
+
+  // Initialize Stripe client inside the function to avoid build-time issues
+  const stripe = loadStripe(process.env.NEXT_SECRET_STRIPE_KEY)
+
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
