@@ -10,10 +10,23 @@ import Twitter from "@modules/common/icons/twitter"
 import YouTube from "@modules/common/icons/youtube"
 
 export default async function Footer() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
-  const productCategories = await listCategories()
+  let collections: any[] = []
+  let productCategories: any[] = []
+
+  try {
+    const { collections: fetchedCollections } = await listCollections({
+      fields: "*products",
+    })
+    collections = fetchedCollections || []
+  } catch (error) {
+    console.warn('Failed to fetch collections in Footer component:', error)
+  }
+
+  try {
+    productCategories = await listCategories()
+  } catch (error) {
+    console.warn('Failed to fetch categories in Footer component:', error)
+  }
 
   return (
     <footer className="bg-white text-gray-900 border-t border-gray-200">

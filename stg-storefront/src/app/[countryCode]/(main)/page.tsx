@@ -25,11 +25,23 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const region = await getRegion(countryCode)
+  let region = null
+  let collections: any[] = []
 
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
+  try {
+    region = await getRegion(countryCode)
+  } catch (error) {
+    console.warn('Failed to fetch region in Home page:', error)
+  }
+
+  try {
+    const { collections: fetchedCollections } = await listCollections({
+      fields: "id, handle, title",
+    })
+    collections = fetchedCollections || []
+  } catch (error) {
+    console.warn('Failed to fetch collections in Home page:', error)
+  }
 
   if (!collections || !region) {
     return null

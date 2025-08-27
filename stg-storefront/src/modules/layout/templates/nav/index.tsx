@@ -17,22 +17,40 @@ import User from "@modules/common/icons/user"
 import Cart from "@modules/common/icons/cart"
 
 export default async function Nav() {
-  const regions = await listRegions().then((regions: StoreRegion[]) => regions)
-  const productCategories = await listCategories()
-  const customer = await retrieveCustomer()
+  let regions: StoreRegion[] = []
+  let productCategories: any[] = []
+  let customer: any = null
+
+  try {
+    regions = await listRegions().then((regions: StoreRegion[]) => regions)
+  } catch (error) {
+    console.warn('Failed to fetch regions in Nav component:', error)
+  }
+
+  try {
+    productCategories = await listCategories()
+  } catch (error) {
+    console.warn('Failed to fetch categories in Nav component:', error)
+  }
+
+  try {
+    customer = await retrieveCustomer()
+  } catch (error) {
+    console.warn('Failed to fetch customer in Nav component:', error)
+  }
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
       <header className="relative h-16 sm:h-20 mx-auto border-b duration-200 bg-white border-ui-border-base">
         <nav className="content-container flex items-center justify-between w-full h-full px-3 sm:px-4 lg:px-6">
-          
+
           {/* Left Section - Desktop Navigation Links / Mobile Menu */}
           <div className="flex items-center flex-1">
             {/* Mobile Menu Button */}
             <div className="lg:hidden">
               <SideMenu regions={regions} />
             </div>
-            
+
             {/* Desktop Navigation Links */}
             <div className="hidden lg:flex items-center space-x-8">
               <LocalizedClientLink
@@ -42,9 +60,9 @@ export default async function Nav() {
               >
                 NEW IN
               </LocalizedClientLink>
-              
+
               <ShopDropdown categories={productCategories} />
-              
+
               <LocalizedClientLink
                 href="/brands"
                 className="text-sm font-medium hover:text-gray-700 transition-colors"
@@ -62,9 +80,9 @@ export default async function Nav() {
               className="hover:opacity-80 transition-opacity"
               data-testid="nav-store-link"
             >
-              <img 
-                src="/stitchgrab-logo.png" 
-                alt="STITCHGRAB" 
+              <img
+                src="/stitchgrab-logo.png"
+                alt="STITCHGRAB"
                 className="h-8 sm:h-10 lg:h-12 w-auto"
               />
             </LocalizedClientLink>
