@@ -12,6 +12,7 @@
     "@medusajs/icons": "^2.8.8",
     "@medusajs/types": "^2.9.0",
     "@medusajs/ui": "^4.0.18",
+    "@medusajs/ui-preset": "^2.9.0",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@typeform/embed-react": "^4.6.0",
     "next": "15.4.5",
@@ -21,7 +22,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@medusajs/ui-preset": "^2.9.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
